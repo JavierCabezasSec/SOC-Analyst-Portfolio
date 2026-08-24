@@ -4,7 +4,7 @@
 
 I am a cybersecurity professional focused on Security Operations, threat detection, incident investigation, and defensive security.
 
-This portfolio documents my hands-on development through security labs, SIEM investigations, threat hunting exercises, network analysis, incident response scenarios, and detection engineering projects.
+This portfolio documents my hands-on development through security labs, SIEM investigations, threat hunting exercises, network analysis, incident response scenarios, and security detection exercises.
 
 ## Current Focus
 
@@ -12,17 +12,17 @@ This portfolio documents my hands-on development through security labs, SIEM inv
 - SIEM investigation and log analysis
 - Windows and Linux security
 - Network traffic analysis
-- Incident response
-- Threat hunting
+- Incident response fundamentals
+- Threat hunting fundamentals
 - MITRE ATT&CK
-- Detection engineering
+- Detection engineering fundamentals
 - PowerShell and command-line analysis
 
-- ## Technical Skills
+## Technical Skills
 
 ### Security Operations
 
-- Alert triage and investigation- Log analysis and event correlation
+- Alert triage and investigation
 - Log analysis and event correlation
 - Incident documentation
 - Incident response workflows
@@ -60,16 +60,16 @@ This portfolio documents my hands-on development through security labs, SIEM inv
 - Firewalls
 - Network traffic analysis
 - Wireshark
-- Network-based threat hunting
+- Network-based threat hunting fundamentals
 
 ### Threat Hunting & Detection
 
 - MITRE ATT&CK
 - IOC and IOA analysis
 - TTP identification
-- Threat hunting methodologies
-- Behavioral analysis
-- Detection logic
+- Threat hunting fundamentals
+- Behavioral analysis fundamentals
+- Detection logic fundamentals
 - Detection engineering fundamentals
 
 ### Incident Response
@@ -77,11 +77,12 @@ This portfolio documents my hands-on development through security labs, SIEM inv
 - Alert validation
 - Investigation and scoping
 - Timeline reconstruction
-- Containment
-- Eradication
-- Recovery
-- Root cause analysis
-- Detection improvement
+- Incident response lifecycle
+- Containment concepts
+- Eradication concepts
+- Recovery concepts
+- Root cause analysis fundamentals
+- Detection improvement concepts
 
 ## Tools & Technologies
 
@@ -90,8 +91,9 @@ This portfolio documents my hands-on development through security labs, SIEM inv
 - Splunk
 - Elastic / Kibana
 
-### Network Analysis
+### Security & Lab Tools
 
+- Kali Linux
 - Wireshark
 - Nmap
 - OpenVPN
@@ -121,9 +123,9 @@ This portfolio documents my hands-on development through security labs, SIEM inv
 - Threat hunting
 - Incident response scenarios
 
-## Portfolio Investigations
+## Security Investigations & Case Studies
 
-This section documents hands-on security investigations and analysis performed through practical labs and controlled environments. Each investigation focuses on the investigative process, evidence, findings, security impact, and recommended defensive actions.
+This section documents security investigations and analysis performed through hands-on training, security labs, and controlled environments. Each case study documents the evidence examined, investigative process, findings, security impact, and recommended defensive actions.
 
 ### SIEM Investigations
 
@@ -137,26 +139,26 @@ This section documents hands-on security investigations and analysis performed t
 
 - IOC and IOA analysis
 - MITRE ATT&CK mapping
-- Network-based threat hunting
-- Endpoint and process analysis
+- Network-based threat hunting fundamentals
+- Endpoint and process analysis fundamentals
 
 ### Incident Response
 
 - Alert validation
 - Investigation and scoping
 - Timeline reconstruction
-- Containment and remediation recommendations
-- Root cause analysis
+- Incident response lifecycle analysis
+- Root cause analysis fundamentals
 
 ## Professional Development
 
-My current development path is focused on progressing from SOC fundamentals into advanced security operations, threat hunting, detection engineering, incident response, cloud security, and security automation.
+My current development path is focused on strengthening SOC fundamentals and progressively developing skills in security operations, threat hunting, detection engineering, incident response, cloud security, and security automation.
 
 ### Development Roadmap
 
 - Complete TryHackMe SOC Level 1
 - Progress through SOC Level 2
-- Expand Splunk and Elastic detection capabilities
+- Expand Splunk and Elastic detection capabilities through hands-on projects
 - Build repeatable threat-hunting workflows
 - Develop detection engineering projects
 - Strengthen incident response methodology
