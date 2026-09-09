@@ -33,7 +33,7 @@ The exercises build on Linux logging concepts and provide hands-on practice iden
 
 **Answer:** `2024-10-02`
 
-### Evidence
+investigations/linux-ssh-threat-detection/task2-ssh-authentication.png
 
 I used the following command to search the authentication logs for SSH activity:
 
