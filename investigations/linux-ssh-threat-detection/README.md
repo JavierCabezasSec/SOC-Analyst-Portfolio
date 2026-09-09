@@ -35,7 +35,7 @@ The exercises build on Linux logging concepts and provide hands-on practice iden
 
 investigations/linux-ssh-threat-detection/task2-ssh-authentication.png
 
-I used the following command to search the authentication logs for SSH activity:
+## Evidence
 
 ```bash
 cat /var/log/auth.log | grep "sshd"
