@@ -89,4 +89,4 @@ I reviewed the SSH authentication logs using the following command:
 cat /var/log/auth.log | grep "Failed password"
 ```
 
-![SSH brute force evidence](task3-ssh-bruteforce.png)
+![SSH Brute Force Discovery]()
