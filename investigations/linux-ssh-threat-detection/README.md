@@ -57,3 +57,4 @@ I reviewed the SSH authentication logs using the following command:
 cat /var/log/auth.log | grep "sshd"
 ```
 
+### Evidence ![SSH authentication evidence](task2-ssh-question2.png)
