@@ -35,7 +35,9 @@ The exercises build on Linux logging concepts and provide hands-on practice iden
 
 investigations/linux-ssh-threat-detection/task2-ssh-authentication.png
 
-## Evidence
+### Evidence
+
+![SSH authentication evidence](task2-ssh-authentication.png)
 
 ```bash
 cat /var/log/auth.log | grep "sshd"
