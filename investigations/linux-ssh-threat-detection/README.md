@@ -33,7 +33,6 @@ The exercises build on Linux logging concepts and provide hands-on practice iden
 
 **Answer:** `2024-10-02`
 
-investigations/linux-ssh-threat-detection/task2-ssh-authentication.png
 
 ### Evidence
 
@@ -56,3 +55,37 @@ I reviewed the SSH authentication logs using the following command:
 ```bash
 cat /var/log/auth.log | grep "sshd"
 ```
+The relevant information that confirmed this:
+
+```bash
+Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 10.9.254.186 port 64824 ssh2: RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg
+```
+
+### Investigation Overview
+
+SSH attacks can occur when public SSH access is exposed, password-based authentication is allowed, and users have weak passwords. Attackers can repeatedly attempt passwords through brute force until they successfully gain access.
+
+When investigating SSH attacks, a useful starting point is to review successful SSH logins and look for signs that separate normal activity from suspicious activity. Key indicators include:
+
+- **Authentication method:** Password-based authentication can be more suspicious than expected public-key authentication.
+- **Source IP:** External or untrusted IP addresses should be investigated.
+- **Login timing and history:** Unusual login times or successful logins following repeated failed attempts may indicate a compromise.
+
+A suspicious SSH login should not automatically be considered malicious. Additional investigation should include the username and whether the login was expected, the reputation and ownership of the source IP, previous login attempts or brute-force activity, and what actions occurred after the login.
+
+The goal of this task is to use SSH authentication logs to identify suspicious login activity and determine what additional evidence is needed before reaching a final conclusion.
+
+### Question 1 — SSH Brute Force Start
+
+**Question:** When did the SSH password brute force start?
+
+**Answer:** 
+
+### Evidence
+
+I reviewed the SSH authentication logs using the following command:
+
+```bash
+cat /var/log/auth.log | grep "Failed password"
+```
+
