@@ -41,3 +41,19 @@ investigations/linux-ssh-threat-detection/task2-ssh-authentication.png
 
 ```bash
 cat /var/log/auth.log | grep "sshd"
+```
+
+### Question 2 — SSH Authentication Method
+
+**Question:** Did the `ubuntu` user use SSH keys instead of a password for the above found date?
+
+**Answer:** **Yes**
+
+### Evidence
+
+I reviewed the SSH authentication logs using the following command:
+
+```bash
+cat /var/log/auth.log | grep "sshd"
+```
+
