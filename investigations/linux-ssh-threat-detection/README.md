@@ -89,3 +89,4 @@ I reviewed the SSH authentication logs using the following command:
 cat /var/log/auth.log | grep "Failed password"
 ```
 
+![SSH authentication evidence](task-3-question-1.png)
