@@ -116,3 +116,13 @@ Since the scenario involves a botnet attempting to compromise user accounts, I f
 ```bash
 grep -E "Invalid user" /var/log/auth.log
 ```
+![Task 2 - SSH Question 2](investigations/linux-ssh-threat-detection/task2-ssh-question2.png)
+This produced a more concise result and allowed me to identify the usernames the botnet attempted to target.
+
+## How?:
+I used grep to search the SSH authentication log for a specific pattern related to the attack.
+
+grep searches the file for matching text.
+-E enables extended regular expressions, allowing multiple or more complex search patterns when needed.
+"Invalid user" searches specifically for SSH attempts made against usernames that were not valid on the system.
+/var/log/auth.log is the authentication log containing SSH login activity. Because the investigation focused on identifying usernames that the botnet attempted to compromise, searching specifically for "Invalid user" provided a more targeted view of the attack activity.
