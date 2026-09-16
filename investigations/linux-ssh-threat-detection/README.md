@@ -252,8 +252,8 @@ I narrowed the search to `Accepted` events because the question asks which IP ma
 **Issue:** The results still included successful authentications for multiple users, such as `ubuntu`.
 
 For example:
-
-```text
+![Task 3 - Question 3 — Continued II](task-3-question-3-continued-II.png)
+```bash
 Accepted password for ubuntu from 10.66.86.216
 Accepted password for ubuntu from 10.66.105.3
 Accepted password for ubuntu from 10.66.96.246
