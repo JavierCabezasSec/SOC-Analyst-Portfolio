@@ -141,3 +141,33 @@ grep -E "Invalid user" /var/log/auth.log
 Because the investigation focused on identifying **usernames that the botnet attempted to compromise**, I narrowed the search to `"Invalid user"`.
 
 This provided a more targeted and concise view of the attack activity compared to searching for multiple SSH authentication events at once.
+
+
+Question 3 - Which IP managed to breach the root user?
+
+The objective is to identify the source IP address associated with the successful SSH authentication of the root account.
+
+Step 1 — Review the authentication log
+cat /var/log/auth.log
+
+I initially reviewed the full authentication log to understand the available SSH activity.
+
+Issue: The results were too broad and contained multiple types of authentication events.
+
+Step 2 — Search for successful authentications
+grep -E "Accepted" /var/log/auth.log
+
+I narrowed the search to Accepted events because the question asks which IP managed to breach the account, indicating a successful authentication.
+
+Issue: The results still included successful authentications for multiple users.
+
+Step 3 — Filter for the root account
+grep -E "Accepted.*root" /var/log/auth.log
+
+I further narrowed the search by combining Accepted with root.
+
+This directly filters for successful SSH authentication involving the root account, making it the most relevant search for the question.
+
+Conclusion
+
+The final search was the most effective because it removed unrelated authentication events and isolated the successful root login. The source IP can then be identified from the address appearing after from in the resulting log entry.
