@@ -99,3 +99,11 @@ cat /var/log/auth.log | grep "Failed password"
 Answer Format: Separate by a comma, in alphabetical order.
 
 #### Answer: root, roy, sol, user
+
+I initially searched the authentication log using:
+```bash
+cat /var/log/auth.log | grep -E 'Accepted'
+```
+This produced authentication events for users who successfully authenticated, resulting in a broad list that did not identify the usernames the botnet attempted to breach.
+
+The search was not useful for this question because Accepted filters for successful authentication attempts, while the question is asking which users the botnet attempted to compromise. Failed authentication attempts and attempts against invalid users provide more relevant evidence for identifying the targeted usernames.
