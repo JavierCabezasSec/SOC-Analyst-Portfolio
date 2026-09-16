@@ -228,7 +228,7 @@ This provided a more targeted and concise view of the attack activity compared t
 <tr>
 <td>
 
-**Objective:** Identify the source IP address associated with the successful SSH authentication of the root account.
+**Objective:** Identify the source IP address associated with the successful SSH authentication of the `root` account.
 
 ### Step 1 — Review the authentication log
 
@@ -248,9 +248,19 @@ I initially reviewed the full authentication log to understand the available SSH
 grep "Accepted" /var/log/auth.log
 ```
 
-I narrowed the search to `Accepted` events because the question asks which IP managed to breach the account, indicating a successful authentication.
+I narrowed the search to `Accepted` events because the question asks which IP managed to breach the account, indicating that a successful authentication should be present.
 
-**Issue:** The results still included successful authentications for multiple users.
+**Issue:** The results still included successful authentications for multiple users, such as `ubuntu`.
+
+For example:
+
+```text
+Accepted password for ubuntu from 10.66.86.216
+Accepted password for ubuntu from 10.66.105.3
+Accepted password for ubuntu from 10.66.96.246
+```
+
+These IP addresses successfully authenticated, but they authenticated as `ubuntu`, not `root`.
 
 ### Step 3 — Filter for the root account
 
@@ -260,13 +270,29 @@ grep "Accepted.*root" /var/log/auth.log
 
 I further narrowed the search by combining `Accepted` with `root`.
 
-This directly filters for successful SSH authentication involving the root account, making it the most relevant search for the question.
+- `Accepted` identifies a successful SSH authentication.
+- `.*` allows any characters between `Accepted` and `root`.
+- `root` limits the results to successful authentication involving the `root` account.
+
+This removes successful authentications for other accounts and isolates the relevant successful `root` login.
 
 ### Conclusion
 
-The final search was the most effective because it removed unrelated authentication events and isolated the successful root login.
+The final search is the most relevant because it specifically identifies **successful authentication events involving the `root` account**, rather than successful logins to other accounts such as `ubuntu`.
 
-The source IP can then be identified from the address appearing after `from` in the resulting log entry.
+The relevant log entry identifies:
+
+```text
+Accepted ... for root from 91.224.92.79
+```
+
+The evidence establishes three important points:
+
+- **`Accepted`** → the authentication was successful.
+- **`for root`** → the account successfully accessed was `root`.
+- **`from 91.224.92.79`** → `91.224.92.79` was the source IP address.
+
+Therefore, the IP that managed to breach the `root` user was:
 
 **Answer:** `91.224.92.79`
 
