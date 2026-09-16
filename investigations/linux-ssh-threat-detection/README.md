@@ -110,3 +110,9 @@ The search was not useful for this question because Accepted filters for success
 
 #### Evidence
 ![Task 3 - Question 2](task-3-question-2.png)
+
+Since the scenario involves a botnet attempting to compromise user accounts, I focused on authentication events that indicated attempted access rather than successful authentication. I therefore changed my search to specifically identify attempts made against invalid or nonexistent usernames.
+
+```bash
+grep -E "Invalid user" /var/log/auth.log
+```
