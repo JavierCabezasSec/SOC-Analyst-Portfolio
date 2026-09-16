@@ -61,7 +61,7 @@ The relevant information that confirmed this:
 Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 10.9.254.186 port 64824 ssh2: RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg
 ```
 
-### Investigation Overview
+### Investigation Overview: Detecting SSH Attacks
 
 SSH attacks can occur when public SSH access is exposed, password-based authentication is allowed, and users have weak passwords. Attackers can repeatedly attempt passwords through brute force until they successfully gain access.
 
@@ -78,6 +78,8 @@ The goal of this task is to use SSH authentication logs to identify suspicious l
 ### Question 1 — SSH Brute Force Start
 
 **Question:** When did the SSH password brute force start?
+
+The brute force began at: 2025-08-21
 
 **Answer:** 
 
