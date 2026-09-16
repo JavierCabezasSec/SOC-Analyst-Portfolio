@@ -2,9 +2,9 @@
 
 ## Threat Detection 1 — Initial Access
 
-<table>
+<table width="100%">
 <tr>
-<td>
+<td width="100%">
 
 ### Lab Environment
 
@@ -19,9 +19,9 @@ This investigation was conducted in a controlled TryHackMe lab environment using
 </tr>
 </table>
 
-<table>
+<table width="100%">
 <tr>
-<td>
+<td width="100%">
 
 ### Investigation Overview
 
@@ -45,9 +45,9 @@ The exercises build on Linux logging concepts and provide hands-on practice iden
 
 # Task 2 — Initial Access via SSH
 
-<table>
+<table width="100%">
 <tr>
-<td>
+<td width="100%">
 
 ## Question 1 — First SSH Login
 
@@ -67,9 +67,9 @@ cat /var/log/auth.log | grep "sshd"
 </tr>
 </table>
 
-<table>
+<table width="100%">
 <tr>
-<td>
+<td width="100%">
 
 ## Question 2 — SSH Authentication Method
 
@@ -87,7 +87,7 @@ cat /var/log/auth.log | grep "sshd"
 
 The relevant information that confirmed this:
 
-```bash
+```text
 Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 10.9.254.186 port 64824 ssh2: RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg
 ```
 
@@ -99,9 +99,9 @@ Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 1
 
 # Task 3 — Detecting SSH Attacks
 
-<table>
+<table width="100%">
 <tr>
-<td>
+<td width="100%">
 
 ## Investigation Overview
 
@@ -121,15 +121,15 @@ The goal of this task is to use SSH authentication logs to identify suspicious l
 </tr>
 </table>
 
-<table>
+<table width="100%">
 <tr>
-<td>
+<td width="100%">
 
 ## Question 1 — SSH Brute Force Start
 
 **Question:** When did the SSH password brute force start?
 
-**Answer:** The brute force began at: 2025-08-21
+**Answer:** The brute force began at: `2025-08-21`
 
 ### Evidence
 
@@ -145,15 +145,15 @@ cat /var/log/auth.log | grep "Failed password"
 </tr>
 </table>
 
-<table>
+<table width="100%">
 <tr>
-<td>
+<td width="100%">
 
-## Question 2 - Which four users did the botnet attempt to breach?
+## Question 2 — Which four users did the botnet attempt to breach?
 
 **Answer Format:** Separate by a comma, in alphabetical order.
 
-#### Answer: root, roy, sol, user
+#### Answer: `root, roy, sol, user`
 
 ### Initial Search
 
@@ -165,7 +165,7 @@ cat /var/log/auth.log | grep -E 'Accepted'
 
 This produced authentication events for users who successfully authenticated, resulting in a broad list that did not identify the usernames the botnet attempted to breach.
 
-The search was not useful for this question because Accepted filters for successful authentication attempts, while the question is asking which users the botnet attempted to compromise. Failed authentication attempts and attempts against invalid users provide more relevant evidence for identifying the targeted usernames.
+The search was not useful for this question because `Accepted` filters for successful authentication attempts, while the question is asking which users the botnet attempted to compromise. Failed authentication attempts and attempts against invalid users provide more relevant evidence for identifying the targeted usernames.
 
 ### Evidence
 
@@ -187,9 +187,9 @@ This produced a more concise result and allowed me to identify the usernames the
 </tr>
 </table>
 
-<table>
+<table width="100%">
 <tr>
-<td>
+<td width="100%">
 
 ## How?
 
@@ -203,10 +203,10 @@ grep -E "Invalid user" /var/log/auth.log
 
 ### Breaking Down the Command
 
-* **`grep`** — Searches a file for matching text.
-* **`-E`** — Enables Extended Regular Expressions, allowing more complex search patterns.
-* **`"Invalid user"`** — Searches specifically for SSH attempts made against usernames that were not valid on the system.
-* **`/var/log/auth.log`** — The authentication log containing SSH login activity.
+- **`grep`** — Searches a file for matching text.
+- **`-E`** — Enables Extended Regular Expressions, allowing more complex search patterns.
+- **`"Invalid user"`** — Searches specifically for SSH attempts made against usernames that were not valid on the system.
+- **`/var/log/auth.log`** — The authentication log containing SSH login activity.
 
 ### My Reasoning
 
@@ -218,15 +218,11 @@ This provided a more targeted and concise view of the attack activity compared t
 </tr>
 </table>
 
-<table>
+<table width="100%">
 <tr>
-<td>
+<td width="100%">
 
 ## Question 3 — Which IP managed to breach the root user?
-
-<table>
-<tr>
-<td>
 
 **Objective:** Identify the source IP address associated with the successful SSH authentication of the `root` account.
 
@@ -270,9 +266,9 @@ grep "Accepted.*root" /var/log/auth.log
 
 I further narrowed the search by combining `Accepted` with `root`.
 
-- `Accepted` identifies a successful SSH authentication.
-- `.*` allows any characters between `Accepted` and `root`.
-- `root` limits the results to successful authentication involving the `root` account.
+- **`Accepted`** identifies a successful SSH authentication.
+- **`.*`** allows any characters between `Accepted` and `root`.
+- **`root`** limits the results to successful authentication involving the root account.
 
 This removes successful authentications for other accounts and isolates the relevant successful `root` login.
 
@@ -288,8 +284,8 @@ Accepted ... for root from 91.224.92.79
 
 The evidence establishes three important points:
 
-- **`Accepted`** → the authentication was successful.
-- **`for root`** → the account successfully accessed was `root`.
+- **`Accepted`** → The authentication was successful.
+- **`for root`** → The account successfully accessed was `root`.
 - **`from 91.224.92.79`** → `91.224.92.79` was the source IP address.
 
 Therefore, the IP that managed to breach the `root` user was:
