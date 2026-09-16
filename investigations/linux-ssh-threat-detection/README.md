@@ -82,9 +82,8 @@ The goal of this task is to use SSH authentication logs to identify suspicious l
 
 **Question:** When did the SSH password brute force start?
 
-The brute force began at: 2025-08-21
 
-**Answer:** 
+**Answer:** The brute force began at: 2025-08-21
 
 ### Evidence
 
