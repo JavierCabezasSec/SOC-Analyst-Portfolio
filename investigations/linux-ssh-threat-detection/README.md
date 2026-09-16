@@ -2,6 +2,10 @@
 
 ## Threat Detection 1 — Initial Access
 
+<table>
+<tr>
+<td>
+
 ### Lab Environment
 
 This investigation was conducted in a controlled TryHackMe lab environment using the Linux Threat Detection 1 machine.
@@ -10,6 +14,14 @@ This investigation was conducted in a controlled TryHackMe lab environment using
 - **Room:** Linux Threat Detection 1 v5
 - **Lab Target:** `10.66.178.85`
 - **Focus:** Linux initial access and threat detection
+
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td>
 
 ### Investigation Overview
 
@@ -25,14 +37,23 @@ The exercises build on Linux logging concepts and provide hands-on practice iden
 - Analyze Linux logs for evidence of initial-access activity.
 - Develop a better understanding of how a SOC analyst can detect and investigate Linux attacks.
 
-## Task 2 — Initial Access via SSH
+</td>
+</tr>
+</table>
 
-### Question 1 — First SSH Login
+---
+
+# Task 2 — Initial Access via SSH
+
+<table>
+<tr>
+<td>
+
+## Question 1 — First SSH Login
 
 **Question:** When did the `ubuntu` user log in via SSH for the first time?
 
 **Answer:** `2024-10-02`
-
 
 ### Evidence
 
@@ -42,7 +63,15 @@ The exercises build on Linux logging concepts and provide hands-on practice iden
 cat /var/log/auth.log | grep "sshd"
 ```
 
-### Question 2 — SSH Authentication Method
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td>
+
+## Question 2 — SSH Authentication Method
 
 **Question:** Did the `ubuntu` user use SSH keys instead of a password for the above found date?
 
@@ -55,17 +84,27 @@ I reviewed the SSH authentication logs using the following command:
 ```bash
 cat /var/log/auth.log | grep "sshd"
 ```
+
 The relevant information that confirmed this:
 
 ```bash
 Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 10.9.254.186 port 64824 ssh2: RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg
 ```
 
+</td>
+</tr>
+</table>
 
-### Task 3: Detecting SSH Attacks
+---
 
+# Task 3 — Detecting SSH Attacks
 
-Investigation Overview:
+<table>
+<tr>
+<td>
+
+## Investigation Overview
+
 SSH attacks can occur when public SSH access is exposed, password-based authentication is allowed, and users have weak passwords. Attackers can repeatedly attempt passwords through brute force until they successfully gain access.
 
 When investigating SSH attacks, a useful starting point is to review successful SSH logins and look for signs that separate normal activity from suspicious activity. Key indicators include:
@@ -78,10 +117,17 @@ A suspicious SSH login should not automatically be considered malicious. Additio
 
 The goal of this task is to use SSH authentication logs to identify suspicious login activity and determine what additional evidence is needed before reaching a final conclusion.
 
-### Question 1 — SSH Brute Force Start
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td>
+
+## Question 1 — SSH Brute Force Start
 
 **Question:** When did the SSH password brute force start?
-
 
 **Answer:** The brute force began at: 2025-08-21
 
@@ -95,32 +141,58 @@ cat /var/log/auth.log | grep "Failed password"
 
 ![SSH Brute Force Discovery](task-3-question-1.png)
 
-### Question 2 - Which four users did the botnet attempt to breach?
-Answer Format: Separate by a comma, in alphabetical order.
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td>
+
+## Question 2 - Which four users did the botnet attempt to breach?
+
+**Answer Format:** Separate by a comma, in alphabetical order.
 
 #### Answer: root, roy, sol, user
 
+### Initial Search
+
 I initially searched the authentication log using:
+
 ```bash
 cat /var/log/auth.log | grep -E 'Accepted'
 ```
+
 This produced authentication events for users who successfully authenticated, resulting in a broad list that did not identify the usernames the botnet attempted to breach.
 
 The search was not useful for this question because Accepted filters for successful authentication attempts, while the question is asking which users the botnet attempted to compromise. Failed authentication attempts and attempts against invalid users provide more relevant evidence for identifying the targeted usernames.
 
-#### Evidence
+### Evidence
+
 ![Task 3 - Question 2](task-3-question-2.png)
+
+### Refined Search
 
 Since the scenario involves a botnet attempting to compromise user accounts, I focused on authentication events that indicated attempted access rather than successful authentication. I therefore changed my search to specifically identify attempts made against invalid or nonexistent usernames.
 
 ```bash
 grep -E "Invalid user" /var/log/auth.log
 ```
+
 ![Task 3 - Question 2 Continued](task-3-question-2-continued.png)
 
 This produced a more concise result and allowed me to identify the usernames the botnet attempted to target.
 
-## How?:
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td>
+
+## How?
+
 ### Why I Used This Command
 
 I used `grep` to search the SSH authentication log for a specific pattern related to the attack.
@@ -142,6 +214,9 @@ Because the investigation focused on identifying **usernames that the botnet att
 
 This provided a more targeted and concise view of the attack activity compared to searching for multiple SSH authentication events at once.
 
+</td>
+</tr>
+</table>
 
 <table>
 <tr>
