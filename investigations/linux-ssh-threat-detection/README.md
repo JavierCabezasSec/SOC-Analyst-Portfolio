@@ -60,10 +60,9 @@ The relevant information that confirmed this:
 ```bash
 Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 10.9.254.186 port 64824 ssh2: RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg
 ```
-
-### Investigation Overview: 
-Task 3: Detecting SSH Attacks
-
+ 
+###Task 3: Detecting SSH Attacks
+## Investigation Overview:
 SSH attacks can occur when public SSH access is exposed, password-based authentication is allowed, and users have weak passwords. Attackers can repeatedly attempt passwords through brute force until they successfully gain access.
 
 When investigating SSH attacks, a useful starting point is to review successful SSH logins and look for signs that separate normal activity from suspicious activity. Key indicators include:
