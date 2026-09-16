@@ -62,8 +62,7 @@ Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 1
 ```
 
 
- 
-###Task 3: Detecting SSH Attacks
+**###Task 3: Detecting SSH Attacks**
 
 
 Investigation Overview:
