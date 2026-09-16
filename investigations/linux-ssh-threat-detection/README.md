@@ -116,7 +116,7 @@ Since the scenario involves a botnet attempting to compromise user accounts, I f
 ```bash
 grep -E "Invalid user" /var/log/auth.log
 ```
-![Task 2 - SSH Question 2](task2-ssh-question2.png)
+
 
 This produced a more concise result and allowed me to identify the usernames the botnet attempted to target.
 
