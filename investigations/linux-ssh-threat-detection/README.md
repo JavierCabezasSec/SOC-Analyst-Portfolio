@@ -231,6 +231,7 @@ This provided a more targeted and concise view of the attack activity compared t
 ```bash
 cat /var/log/auth.log
 ```
+![Task 3 - Question 3](task-3-question-3.png)
 
 I initially reviewed the full authentication log to understand the available SSH activity.
 
