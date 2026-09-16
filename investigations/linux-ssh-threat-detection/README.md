@@ -244,6 +244,9 @@ I initially reviewed the full authentication log to understand the available SSH
 grep "Accepted" /var/log/auth.log
 ```
 
+![Task 3 - Question 3](task-3-question-3.png)
+
+
 I narrowed the search to `Accepted` events because the question asks which IP managed to breach the account, indicating that a successful authentication should be present.
 
 **Issue:** The results still included successful authentications for multiple users, such as `ubuntu`.
