@@ -99,4 +99,4 @@ cat /var/log/auth.log | grep "Failed password"
 ### Question 2 - Which four users did the botnet attempt to breach?
 Answer Format: Separate by a comma, in alphabetical order.
 
-# Answer: root, roy, sol, user
+#### Answer: root, roy, sol, user
