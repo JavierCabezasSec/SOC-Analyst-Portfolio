@@ -109,4 +109,4 @@ This produced authentication events for users who successfully authenticated, re
 The search was not useful for this question because Accepted filters for successful authentication attempts, while the question is asking which users the botnet attempted to compromise. Failed authentication attempts and attempts against invalid users provide more relevant evidence for identifying the targeted usernames.
 
 #### Evidence
-![Task 3 - Question 2](investigations/linux-ssh-threat-detection/task-3-question-2.png)
+![Task 3 - Question 2](task-3-question-2.png)
