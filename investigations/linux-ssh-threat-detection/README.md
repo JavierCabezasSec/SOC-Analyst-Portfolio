@@ -60,6 +60,8 @@ The relevant information that confirmed this:
 ```bash
 Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 10.9.254.186 port 64824 ssh2: RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg
 ```
+
+
  
 ###Task 3: Detecting SSH Attacks
 
