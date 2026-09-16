@@ -224,6 +224,10 @@ This provided a more targeted and concise view of the attack activity compared t
 
 ## Question 3 — Which IP managed to breach the root user?
 
+<table>
+<tr>
+<td>
+
 **Objective:** Identify the source IP address associated with the successful SSH authentication of the root account.
 
 ### Step 1 — Review the authentication log
@@ -231,6 +235,7 @@ This provided a more targeted and concise view of the attack activity compared t
 ```bash
 cat /var/log/auth.log
 ```
+
 ![Task 3 - Question 3](task-3-question-3.png)
 
 I initially reviewed the full authentication log to understand the available SSH activity.
@@ -240,7 +245,7 @@ I initially reviewed the full authentication log to understand the available SSH
 ### Step 2 — Search for successful authentications
 
 ```bash
-grep -E "Accepted" /var/log/auth.log
+grep "Accepted" /var/log/auth.log
 ```
 
 I narrowed the search to `Accepted` events because the question asks which IP managed to breach the account, indicating a successful authentication.
@@ -250,7 +255,7 @@ I narrowed the search to `Accepted` events because the question asks which IP ma
 ### Step 3 — Filter for the root account
 
 ```bash
-grep -E "Accepted.*root" /var/log/auth.log
+grep "Accepted.*root" /var/log/auth.log
 ```
 
 I further narrowed the search by combining `Accepted` with `root`.
@@ -262,6 +267,8 @@ This directly filters for successful SSH authentication involving the root accou
 The final search was the most effective because it removed unrelated authentication events and isolated the successful root login.
 
 The source IP can then be identified from the address appearing after `from` in the resulting log entry.
+
+**Answer:** `91.224.92.79`
 
 </td>
 </tr>
