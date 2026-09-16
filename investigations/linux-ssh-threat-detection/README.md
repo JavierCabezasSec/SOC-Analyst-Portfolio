@@ -105,5 +105,6 @@ I initially searched the authentication log using:
 cat /var/log/auth.log | grep -E 'Accepted'
 ```
 This produced authentication events for users who successfully authenticated, resulting in a broad list that did not identify the usernames the botnet attempted to breach.
-
+#### Evidence
+investigations/linux-ssh-threat-detection/Task-3 question 2.png
 The search was not useful for this question because Accepted filters for successful authentication attempts, while the question is asking which users the botnet attempted to compromise. Failed authentication attempts and attempts against invalid users provide more relevant evidence for identifying the targeted usernames.
