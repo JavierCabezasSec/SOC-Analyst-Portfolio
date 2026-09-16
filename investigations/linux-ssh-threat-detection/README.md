@@ -62,7 +62,7 @@ Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 1
 ```
  
 ###Task 3: Detecting SSH Attacks
-## Investigation Overview:
+ Investigation Overview:
 SSH attacks can occur when public SSH access is exposed, password-based authentication is allowed, and users have weak passwords. Attackers can repeatedly attempt passwords through brute force until they successfully gain access.
 
 When investigating SSH attacks, a useful starting point is to review successful SSH logins and look for signs that separate normal activity from suspicious activity. Key indicators include:
