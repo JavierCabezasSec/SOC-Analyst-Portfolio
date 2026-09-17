@@ -308,10 +308,28 @@ Therefore, the IP that managed to breach the `root` user was:
 
 ## Investigation Overview
 
-This task focuses on identifying **initial access through publicly exposed services**, with an emphasis on web applications running on Linux systems. The investigation uses application and web server logs to identify suspicious requests that may indicate exploitation or command injection.
+This task focuses on identifying **initial access through publicly exposed services**, with an emphasis on web applications running on Linux systems. Public-facing services can become an entry point for attackers when applications contain vulnerabilities or are improperly configured.
 
-The objective is to analyze the available log activity, distinguish legitimate requests from malicious behavior, and identify evidence that an attacker may have gained access to the underlying Linux system through a vulnerable public-facing service.
+The investigation uses application and web server logs to identify suspicious requests that may indicate exploitation, command injection, or other malicious activity. These logs can provide valuable evidence of attacker activity, although they may not reveal the complete sequence of events occurring on the underlying Linux system.
+
+A key part of the investigation is distinguishing normal application requests from activity that may indicate an attacker is attempting to execute commands or exploit a vulnerable service.
+
+## Objective
+
+The objective is to analyze the available web application logs, identify suspicious requests, and determine whether the activity provides evidence of exploitation against the public-facing service.
+
+The investigation focuses on:
+
+- Identifying the **source IP address** associated with suspicious activity.
+- Identifying the **public-facing service or application** being targeted.
+- Analyzing request parameters for evidence of **command injection or exploitation**.
+- Determining whether the attacker appears to have attempted **OS command execution**.
+- Assessing whether the available evidence indicates a potential compromise of the underlying **Linux system**.
 
 </td>
 </tr>
 </table>
+
+---
+
+## Question 1
