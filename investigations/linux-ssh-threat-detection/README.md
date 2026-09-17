@@ -451,6 +451,6 @@ The request demonstrates an attempted command injection through the `/ping` endp
 
 **Answer:** `/opt/trypingme/main.py`
 
-</td>
-</tr>
-</table>
+<table width="100%">
+<tr>
+<td width="100%">
