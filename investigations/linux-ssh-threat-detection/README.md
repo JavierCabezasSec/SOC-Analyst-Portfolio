@@ -340,6 +340,10 @@ The investigation focuses on:
 <tr>
 <td width="100%">
 
+<table width="100%">
+<tr>
+<td width="100%">
+
 ## Question 4 — What is the path to the Python file the attacker attempted to open?
 
 **Question:** What is the path to the Python file the attacker attempted to open?
@@ -451,6 +455,6 @@ The request demonstrates an attempted command injection through the `/ping` endp
 
 **Answer:** `/opt/trypingme/main.py`
 
-<table width="100%">
-<tr>
-<td width="100%">
+</td>
+</tr>
+</table>
