@@ -332,4 +332,117 @@ The investigation focuses on:
 
 ---
 
-## Question 1
+<table width="100%">
+<tr>
+<td width="100%">
+
+# Question 4 — What is the path to the Python file the attacker attempted to open?
+
+**Answer:** `/opt/trypingme/main.py`
+
+### Step 1 — Review the Nginx Access Log
+
+I began by reviewing the Nginx access log to identify suspicious requests against the web application.
+
+```bash
+cat /var/log/nginx/access.log
+```
+
+While reviewing the requests, I noticed activity from the same external IP address:
+
+```text
+10.14.105.255
+```
+
+The requests were targeting the `/ping` endpoint and included values such as:
+
+```text
+GET /ping?host=hello HTTP/1.1
+GET /ping?host=whoami HTTP/1.1
+```
+
+The `whoami` request stood out because `whoami` is a Linux command used to identify the current user.
+
+This suggested that the attacker may have been testing whether input supplied to the `host` parameter was being interpreted as a system command.
+
+### Step 2 — Search for Python File References
+
+Since the question asks specifically for a Python file, I narrowed the search to requests containing the `.py` extension.
+
+```bash
+grep -E "\.py" /var/log/nginx/access.log
+```
+
+The escaped period (`\.`) searches for the literal `.py` extension rather than treating `.` as a regular-expression wildcard.
+
+This reduces the large access log to requests that reference Python files, making it easier to identify the file involved in the attack.
+
+### Step 3 — Identify the Suspicious Request
+
+The search revealed the following request:
+
+```text
+10.14.105.255 - - [26/Aug/2025:20:10:49 +0000] "GET /ping?host=;cat+/opt/trypingme/main.py HTTP/1.1" 200 330 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+```
+
+The important portion is:
+
+```text
+host=;cat+/opt/trypingme/main.py
+```
+
+This is significant because the attacker is no longer simply supplying a hostname or IP address to the `/ping` function.
+
+Instead, the `host` parameter contains a shell command:
+
+```text
+cat /opt/trypingme/main.py
+```
+
+The `cat` command is commonly used on Linux to read and display the contents of a file.
+
+Therefore, the request indicates an attempt to use the application's `host` parameter to execute a command that would read a Python source file from the server.
+
+### Step 4 — Trace the Evidence to the File
+
+The relevant portion of the request can be broken down as:
+
+```text
+/ping
+   ↓
+host=
+   ↓
+;
+   ↓
+cat
+   ↓
+/opt/trypingme/main.py
+```
+
+The semicolon is significant because it can be used to separate commands in a shell command line.
+
+The attacker therefore appears to have attempted to inject a command into the `host` parameter and use `cat` to open/read the Python source file.
+
+The file path is directly visible in the request:
+
+```text
+/opt/trypingme/main.py
+```
+
+### Conclusion
+
+The Nginx access log provides a direct connection between the suspicious `/ping` request and the Python file targeted by the attacker.
+
+The evidence shows:
+
+- **Source:** `10.14.105.255`
+- **Endpoint:** `/ping`
+- **Parameter:** `host`
+- **Command:** `cat`
+- **Target file:** `/opt/trypingme/main.py`
+
+### Answer **`/opt/trypingme/main.py`**
+
+</td>
+</tr>
+</table>
