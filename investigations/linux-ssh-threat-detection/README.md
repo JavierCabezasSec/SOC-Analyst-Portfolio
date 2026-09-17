@@ -336,7 +336,9 @@ The investigation focuses on:
 <tr>
 <td width="100%">
 
-# Question 4 — What is the path to the Python file the attacker attempted to open?
+## Question 4 — What is the path to the Python file the attacker attempted to open?
+
+**Question:** What is the path to the Python file the attacker attempted to open?
 
 **Answer:** `/opt/trypingme/main.py`
 
@@ -441,7 +443,9 @@ The evidence shows:
 - **Command:** `cat`
 - **Target file:** `/opt/trypingme/main.py`
 
-### Answer **`/opt/trypingme/main.py`**
+The request demonstrates an attempted command injection through the `/ping` endpoint, with the attacker attempting to use `cat` to read the Python source file.
+
+**Answer:** `/opt/trypingme/main.py`
 
 </td>
 </tr>
