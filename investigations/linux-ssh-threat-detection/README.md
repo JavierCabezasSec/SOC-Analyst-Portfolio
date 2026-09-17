@@ -293,7 +293,7 @@ The evidence establishes three important points:
 
 Therefore, the IP that managed to breach the `root` user was:
 
-**Answer:** `91.224.92.79`
+**Answer:** ![Task 3 - Question 3 — Continued III](task-3-question-3-continued-III-three.png)
 
 </td>
 </tr>
