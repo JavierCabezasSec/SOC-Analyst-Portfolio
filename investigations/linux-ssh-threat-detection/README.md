@@ -336,6 +336,10 @@ The investigation focuses on:
 <tr>
 <td width="100%">
 
+<table width="100%">
+<tr>
+<td width="100%">
+
 ## Question 4 — What is the path to the Python file the attacker attempted to open?
 
 **Question:** What is the path to the Python file the attacker attempted to open?
