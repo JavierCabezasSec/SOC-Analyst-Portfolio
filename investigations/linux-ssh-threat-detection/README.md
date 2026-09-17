@@ -1,3 +1,4 @@
+```markdown
 # Linux Threat Detection Investigation Series
 
 ## Threat Detection 1 — Initial Access
@@ -246,14 +247,15 @@ grep "Accepted" /var/log/auth.log
 
 ![Task 3 - Question 3](task-3-question-3.png)
 
-
 I narrowed the search to `Accepted` events because the question asks which IP managed to breach the account, indicating that a successful authentication should be present.
 
 **Issue:** The results still included successful authentications for multiple users, such as `ubuntu`.
 
 For example:
+
 ![Task 3 - Question 3 — Continued II](task-3-question-3-continued-II.png)
-```bash
+
+```text
 Accepted password for ubuntu from 10.66.86.216
 Accepted password for ubuntu from 10.66.105.3
 Accepted password for ubuntu from 10.66.96.246
@@ -299,7 +301,6 @@ Therefore, the IP that managed to breach the `root` user was:
 </tr>
 </table>
 
-
 # Task 4 — Initial Access via Services
 
 <table width="100%">
@@ -331,10 +332,6 @@ The investigation focuses on:
 </table>
 
 ---
-
-<table width="100%">
-<tr>
-<td width="100%">
 
 <table width="100%">
 <tr>
@@ -454,3 +451,5 @@ The request demonstrates an attempted command injection through the `/ping` endp
 </td>
 </tr>
 </table>
+```
+```
