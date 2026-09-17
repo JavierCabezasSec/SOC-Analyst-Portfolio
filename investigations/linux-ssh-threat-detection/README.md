@@ -298,3 +298,20 @@ Therefore, the IP that managed to breach the `root` user was:
 </td>
 </tr>
 </table>
+
+
+# Task 4 — Initial Access via Services
+
+<table width="100%">
+<tr>
+<td width="100%">
+
+## Investigation Overview
+
+This task focuses on identifying **initial access through publicly exposed services**, with an emphasis on web applications running on Linux systems. The investigation uses application and web server logs to identify suspicious requests that may indicate exploitation or command injection.
+
+The objective is to analyze the available log activity, distinguish legitimate requests from malicious behavior, and identify evidence that an attacker may have gained access to the underlying Linux system through a vulnerable public-facing service.
+
+</td>
+</tr>
+</table>
