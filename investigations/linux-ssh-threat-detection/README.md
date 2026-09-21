@@ -490,6 +490,9 @@ The semicolon can separate commands in a shell, allowing the attacker to append 
 cat /opt/trypingme/main.py
 ```
 
+![Task 4 - Question 2 - Flag Captured](Task-4Question-2-Flag-Captured.png)
+
+
 This provided the path to the Python application's source code. I then opened the file directly:
 
 ```bash
