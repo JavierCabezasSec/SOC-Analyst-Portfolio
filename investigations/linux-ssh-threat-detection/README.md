@@ -246,13 +246,14 @@ grep "Accepted" /var/log/auth.log
 
 ![Task 3 - Question 3](task-3-question-3.png)
 
-
 I narrowed the search to `Accepted` events because the question asks which IP managed to breach the account, indicating that a successful authentication should be present.
 
 **Issue:** The results still included successful authentications for multiple users, such as `ubuntu`.
 
 For example:
+
 ![Task 3 - Question 3 — Continued II](task-3-question-3-continued-II.png)
+
 ```bash
 Accepted password for ubuntu from 10.66.86.216
 Accepted password for ubuntu from 10.66.105.3
@@ -293,12 +294,13 @@ The evidence establishes three important points:
 
 Therefore, the IP that managed to breach the `root` user was:
 
-**Answer:** ![Task 3 - Question 3 — Continued III](task-3-question-3-continued-III-three.png)
+**Answer:** `91.224.92.79`
+
+![Task 3 - Question 3 — Continued III](task-3-question-3-continued-III-three.png)
 
 </td>
 </tr>
 </table>
-
 
 # Task 4 — Initial Access via Services
 
@@ -363,6 +365,7 @@ While reviewing the requests, I noticed activity from the same external IP addre
 ```text
 10.14.105.255
 ```
+
 ![Task 4 Question 1 - The Path](Task-4Question-1-thepath.png)
 
 The requests were targeting the `/ping` endpoint and included values such as:
@@ -458,65 +461,36 @@ The request demonstrates an attempted command injection through the `/ping` endp
 
 **Answer:** `/opt/trypingme/main.py`
 
+## Question 5 — Looking inside the opened file, what's the flag you see there?
 
-## Question 5 — Looking inside the opened file, what's the flag you see there?  
 **Answer:** `THM{i_am_vulnerable!}`
 
 ### Investigation
 
-To determine which Python file the attacker attempted to access, I searched the Nginx access log for requests containing `.py`:
+Since Question 4 identified `/opt/trypingme/main.py` as the file the attacker attempted to read, I next inspected that file to determine what information may have been exposed:
 
 ```bash
-grep -E "\.py" /var/log/nginx/access.log
+cat /opt/trypingme/main.py
 ```
+
 ![Task 4 - Question 2 - Flag](Task-4Question-2-Flag.png)
 
-
-The search returned a suspicious request from `10.14.105.255`:
-
-```text
-10.14.105.255 - - [26/Aug/2025:20:10:49 +0000] "GET /ping?host=;cat+/opt/trypingme/main.py HTTP/1.1" 200 330
-```
-
-The request is suspicious because the `host` parameter contains a semicolon followed by a `cat` command:
-
-```text
-host=;cat+/opt/trypingme/main.py
-```
-
-The semicolon can separate commands in a shell, allowing the attacker to append their own command to the application's expected input. In this case, the attacker attempted to execute:
-
-```bash
-cat /opt/trypingme/main.py
-```
-
-![Task 4 - Question 2 - Flag Captured](Task-4Question-2-Flag-Captured.png)
-
-
-This provided the path to the Python application's source code. I then opened the file directly:
-
-```bash
-cat /opt/trypingme/main.py
-```
-
-Reviewing the source code revealed the following comment:
+The source code revealed the following comment:
 
 ```text
 # THM{i_am_vulnerable!}
 ```
 
-The flag was therefore exposed within the application's Python source code.
+![Task 4 - Question 2 - Flag Captured](Task-4Question-2-Flag-Captured.png)
+
+The flag was embedded directly within the Python application's source code.
 
 ### Conclusion
 
-The Nginx log showed the attacker attempting to use command injection to execute `cat` against `/opt/trypingme/main.py`. Inspecting that file revealed the flag embedded in the source code.
+The Nginx access log showed an attempted command injection targeting `/opt/trypingme/main.py`. After identifying the targeted file, I inspected its contents and found the flag embedded in the source code.
 
 **Answer:** `THM{i_am_vulnerable!}`
-
 
 </td>
 </tr>
 </table>
-
-
-```
