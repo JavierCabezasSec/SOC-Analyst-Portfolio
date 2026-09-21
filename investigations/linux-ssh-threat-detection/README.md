@@ -504,17 +504,21 @@ The Nginx access log showed an attempted command injection targeting `/opt/trypi
 
 ## Investigation Overview
 
-Application logs can provide valuable evidence when investigating a service breach, as demonstrated in the previous task. However, application logs may not always be available, complete, or sufficient to determine how an attacker gained initial access.
+Application logs can provide valuable evidence when investigating a service breach, as demonstrated in the previous task. However, 
+application logs may not always be available, complete, or sufficient to determine how an attacker gained initial access.
 
-Process tree analysis provides another method for investigating suspicious activity by tracing a process back through its parent and grandparent processes. This allows a SOC analyst to determine what launched a suspicious command and whether it originated from legitimate activity, a system process, or a potentially compromised application.
+Process tree analysis provides another method for investigating suspicious activity by tracing a process back through its parent and grandparent processes. 
+This allows a SOC analyst to determine what launched a suspicious command and whether it originated from legitimate activity, a system process, or a potentially compromised application.
 
 In this task, I will use Linux `auditd` logs and the `ausearch` command to trace suspicious processes back to their origin.
 
-The investigation will focus on the **TryPingMe application** examined in the previous task and use process relationships to determine how suspicious commands were executed.
+The investigation will focus on the **TryPingMe application** examined in the previous task and use process relationships to determine 
+how suspicious commands were executed.
 
 ## What to Expect
 
-This task will focus on using **process IDs (`PID`)** and **parent process IDs (`PPID`)** to reconstruct the sequence of processes involved in suspicious activity.
+This task will focus on using **process IDs (`PID`)** and **parent process IDs (`PPID`)** to reconstruct the sequence of processes 
+involved in suspicious activity.
 
 The investigation will include:
 
