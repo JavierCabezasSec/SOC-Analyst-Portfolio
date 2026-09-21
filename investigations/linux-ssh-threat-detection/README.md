@@ -2,7 +2,7 @@
 
 ## Threat Detection 1 — Initial Access
 
-<table width="100%">
+<table width="120%">
 <tr>
 <td width="100%">
 
@@ -19,7 +19,7 @@ This investigation was conducted in a controlled TryHackMe lab environment using
 </tr>
 </table>
 
-<table width="100%">
+<table width="120%">
 <tr>
 <td width="100%">
 
@@ -45,7 +45,7 @@ The exercises build on Linux logging concepts and provide hands-on practice iden
 
 # Task 2 — Initial Access via SSH
 
-<table width="100%">
+<table width="120%">
 <tr>
 <td width="100%">
 
@@ -67,7 +67,7 @@ cat /var/log/auth.log | grep "sshd"
 </tr>
 </table>
 
-<table width="100%">
+<table width="120%">
 <tr>
 <td width="100%">
 
@@ -99,7 +99,7 @@ Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 1
 
 # Task 3 — Detecting SSH Attacks
 
-<table width="100%">
+<table width="120%">
 <tr>
 <td width="100%">
 
@@ -121,7 +121,7 @@ The goal of this task is to use SSH authentication logs to identify suspicious l
 </tr>
 </table>
 
-<table width="100%">
+<table width="120%">
 <tr>
 <td width="100%">
 
@@ -145,7 +145,7 @@ cat /var/log/auth.log | grep "Failed password"
 </tr>
 </table>
 
-<table width="100%">
+<table width="120%">
 <tr>
 <td width="100%">
 
@@ -187,7 +187,7 @@ This produced a more concise result and allowed me to identify the usernames the
 </tr>
 </table>
 
-<table width="100%">
+<table width="120%">
 <tr>
 <td width="100%">
 
@@ -218,7 +218,7 @@ This provided a more targeted and concise view of the attack activity compared t
 </tr>
 </table>
 
-<table width="100%">
+<table width="120%">
 <tr>
 <td width="100%">
 
@@ -269,9 +269,9 @@ grep "Accepted.*root" /var/log/auth.log
 
 I further narrowed the search by combining `Accepted` with `root`.
 
-- **`Accepted`** identifies a successful SSH authentication.
-- **`.*`** allows any characters between `Accepted` and `root`.
-- **`root`** limits the results to successful authentication involving the root account.
+- **`Accepted`** → The authentication was successful.
+- **`.*`** → Allows any characters between `Accepted` and `root`.
+- **`root`** → Limits the results to successful authentication involving the root account.
 
 This removes successful authentications for other accounts and isolates the relevant successful `root` login.
 
@@ -302,7 +302,7 @@ Therefore, the IP that managed to breach the `root` user was:
 
 # Task 4 — Initial Access via Services
 
-<table width="100%">
+<table width="120%">
 <tr>
 <td width="100%">
 
@@ -332,15 +332,15 @@ The investigation focuses on:
 
 ---
 
-<table width="100%">
+<table width="120%">
 <tr>
 <td width="100%">
 
-<table width="100%">
+<table width="120%">
 <tr>
 <td width="100%">
 
-<table width="100%">
+<table width="120%">
 <tr>
 <td width="100%">
 
@@ -459,3 +459,6 @@ The request demonstrates an attempted command injection through the `/ping` endp
 </td>
 </tr>
 </table>
+
+
+```
