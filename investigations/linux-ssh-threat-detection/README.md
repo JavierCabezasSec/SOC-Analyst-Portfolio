@@ -458,6 +458,11 @@ The request demonstrates an attempted command injection through the `/ping` endp
 
 **Answer:** `/opt/trypingme/main.py`
 
+
+## Question 5 — Looking inside the opened file, what's the flag you see there?  
+**Answer:** `THM{i_am_vulnerable!}`
+
+
 </td>
 </tr>
 </table>
