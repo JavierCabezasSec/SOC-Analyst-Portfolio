@@ -498,9 +498,9 @@ The Nginx access log showed an attempted command injection targeting `/opt/trypi
 
 # Task 5 — Building Process Tree
 
-<table width="180%">
+<table width="120%">
 <tr>
-<td width="140%">
+<td width="100%">
 
 ## Investigation Overview
 
