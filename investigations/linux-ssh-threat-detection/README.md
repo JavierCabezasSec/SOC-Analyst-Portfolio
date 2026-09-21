@@ -364,6 +364,7 @@ While reviewing the requests, I noticed activity from the same external IP addre
 10.14.105.255
 ```
 ![Task 4 Question 1 - The Path](Task-4Question-1-thepath.png)
+
 The requests were targeting the `/ping` endpoint and included values such as:
 
 ```text
