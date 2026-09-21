@@ -469,6 +469,8 @@ To determine which Python file the attacker attempted to access, I searched the 
 ```bash
 grep -E "\.py" /var/log/nginx/access.log
 ```
+![Task 4 - Question 2 - Flag](Task-4Question-2-Flag.png)
+
 
 The search returned a suspicious request from `10.14.105.255`:
 
