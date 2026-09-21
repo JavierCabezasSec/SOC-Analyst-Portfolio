@@ -384,6 +384,8 @@ Since the question asks specifically for a Python file, I narrowed the search to
 grep -E "\.py" /var/log/nginx/access.log
 ```
 
+![Task 4 - Question 1 - The Path](Task-4Question-1-thepath-pt2.png)
+
 The escaped period (`\.`) searches for the literal `.py` extension rather than treating `.` as a regular-expression wildcard.
 
 This reduces the large access log to requests that reference Python files, making it easier to identify the file involved in the attack.
