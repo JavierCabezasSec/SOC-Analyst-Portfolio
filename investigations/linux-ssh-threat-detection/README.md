@@ -507,8 +507,10 @@ The Nginx access log showed an attempted command injection targeting `/opt/trypi
 Application logs can provide valuable evidence when investigating a service breach, as demonstrated in the previous task. However, 
 application logs may not always be available, complete, or sufficient to determine how an attacker gained initial access.
 
-Process tree analysis provides another method for investigating suspicious activity by tracing a process back through its parent and grandparent processes. 
-This allows a SOC analyst to determine what launched a suspicious command and whether it originated from legitimate activity, a system process, or a potentially compromised application.
+Process tree analysis provides another method for investigating suspicious activity 
+by tracing a process back through its parent and grandparent processes. 
+This allows a SOC analyst to determine what launched a suspicious command and whether it 
+originated from legitimate activity, a system process, or a potentially compromised application.
 
 In this task, I will use Linux `auditd` logs and the `ausearch` command to trace suspicious processes back to their origin.
 
