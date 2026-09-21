@@ -462,6 +462,52 @@ The request demonstrates an attempted command injection through the `/ping` endp
 ## Question 5 — Looking inside the opened file, what's the flag you see there?  
 **Answer:** `THM{i_am_vulnerable!}`
 
+### Investigation
+
+To determine which Python file the attacker attempted to access, I searched the Nginx access log for requests containing `.py`:
+
+```bash
+grep -E "\.py" /var/log/nginx/access.log
+```
+
+The search returned a suspicious request from `10.14.105.255`:
+
+```text
+10.14.105.255 - - [26/Aug/2025:20:10:49 +0000] "GET /ping?host=;cat+/opt/trypingme/main.py HTTP/1.1" 200 330
+```
+
+The request is suspicious because the `host` parameter contains a semicolon followed by a `cat` command:
+
+```text
+host=;cat+/opt/trypingme/main.py
+```
+
+The semicolon can separate commands in a shell, allowing the attacker to append their own command to the application's expected input. In this case, the attacker attempted to execute:
+
+```bash
+cat /opt/trypingme/main.py
+```
+
+This provided the path to the Python application's source code. I then opened the file directly:
+
+```bash
+cat /opt/trypingme/main.py
+```
+
+Reviewing the source code revealed the following comment:
+
+```text
+# THM{i_am_vulnerable!}
+```
+
+The flag was therefore exposed within the application's Python source code.
+
+### Conclusion
+
+The Nginx log showed the attacker attempting to use command injection to execute `cat` against `/opt/trypingme/main.py`. Inspecting that file revealed the flag embedded in the source code.
+
+**Answer:** `THM{i_am_vulnerable!}`
+
 
 </td>
 </tr>
