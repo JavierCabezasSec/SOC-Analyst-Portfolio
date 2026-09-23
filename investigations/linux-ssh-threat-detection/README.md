@@ -29,12 +29,15 @@ The purpose of this lab is to investigate how attackers can gain initial access 
 
 The exercises build on Linux logging concepts and provide hands-on practice identifying activity that could indicate an attempted or successful compromise.
 
+Rather than treating a single suspicious event as proof of compromise, this investigation focuses on **correlating multiple pieces of evidence**, determining what each artifact actually establishes, and identifying what additional evidence would be required to reach a stronger conclusion.
+
 ### Investigation Objectives
 
 - Analyze the security risks associated with SSH in Linux environments.
 - Identify how exposed services can provide attackers with an entry point.
 - Use process and parent-child relationships to trace suspicious activity back to its origin.
 - Analyze Linux logs for evidence of initial-access activity.
+- Correlate authentication, application, and host-level evidence.
 - Develop a better understanding of how a SOC analyst can detect and investigate Linux attacks.
 
 </td>
@@ -53,15 +56,114 @@ The exercises build on Linux logging concepts and provide hands-on practice iden
 
 **Question:** When did the `ubuntu` user log in via SSH for the first time?
 
-**Answer:** `2024-10-02`
+**Answer:** `October 22 at 08:28:00`
 
-### Evidence
+### Investigation Approach
 
-![SSH authentication evidence](task2-ssh-authentication.png)
+To determine when the `ubuntu` user first logged in through SSH, I reviewed the Linux authentication log:
 
 ```bash
 cat /var/log/auth.log | grep "sshd"
 ```
+
+I selected `/var/log/auth.log` because it contains authentication-related events on Ubuntu systems. I then filtered the results for `sshd`, the SSH daemon, to narrow the investigation specifically to SSH-related activity.
+
+This produced several SSH events, including SSH service startup messages and successful authentication events.
+
+![SSH authentication evidence](task2-ssh-authentication.png)
+
+### Reviewing the Results
+
+The first two entries showed the SSH service starting and listening on port 22:
+
+```text
+Oct 22 08:27:52 ip-10-10-249-101 sshd[661]: Server listening on 0.0.0.0 port 22.
+Oct 22 08:27:52 ip-10-10-249-101 sshd[661]: Server listening on :: port 22.
+```
+
+These entries establish that the SSH service was listening for connections, but they do **not** indicate that the `ubuntu` user had logged in.
+
+I therefore looked for the first authentication event involving the `ubuntu` account.
+
+The relevant entry was:
+
+```text
+Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 10.9.254.186 port 64824 ssh2: RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg
+```
+
+This event contains several important pieces of evidence:
+
+- **`Oct 22 08:28:00`** — The timestamp of the authentication event.
+- **`sshd[809]`** — The SSH daemon process that handled the authentication.
+- **`Accepted`** — The authentication attempt was successful.
+- **`publickey`** — Public-key authentication was used.
+- **`for ubuntu`** — The account that successfully authenticated was `ubuntu`.
+- **`from 10.9.254.186`** — The connection originated from `10.9.254.186`.
+- **`port 64824`** — The source system used port `64824` for the connection.
+- **`RSA SHA256:...`** — The log records the fingerprint associated with the SSH key used for authentication.
+
+A second authentication event occurred at the same timestamp:
+
+```text
+Oct 22 08:28:00 ip-10-10-249-101 sshd[869]: Accepted publickey for ubuntu from 10.9.254.186 port 64825 ssh2: RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg
+```
+
+This shows another successful `ubuntu` authentication from the same source IP using the same public-key fingerprint, but through a different source port.
+
+The authentication events were also followed by:
+
+```text
+Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: pam_unix(sshd:session): session opened for user ubuntu by (uid=0)
+```
+
+This provides additional evidence that an SSH session was opened for the `ubuntu` account after successful authentication.
+
+### SOC Analyst Interpretation
+
+From an investigation perspective, the important distinction is between **SSH service availability** and **successful user authentication**.
+
+The `Server listening` messages show that SSH was available on port 22, but the `Accepted publickey for ubuntu` event is the evidence that the `ubuntu` account successfully authenticated.
+
+The subsequent `session opened for user ubuntu` event further confirms that a session was established.
+
+Therefore, the first observed successful SSH login for the `ubuntu` account in the available authentication log occurred on:
+
+**October 22 at 08:28:00**
+
+### Why This Finding Is Significant
+
+This establishes an important point in the SSH authentication timeline.
+
+As a SOC analyst, I would use this event as a starting point for further investigation because it provides:
+
+- The **account** that authenticated.
+- The **timestamp** of the authentication.
+- The **source IP address**.
+- The **authentication method**.
+- The **SSH key fingerprint**.
+- Evidence that a **session was opened**.
+
+This information can then be correlated with other activity before and after the login.
+
+For example, if this were an active investigation, I would investigate whether the source IP had generated previous failed authentication attempts, whether the login time was expected, and what commands or processes were executed after the session was established.
+
+### Important Investigation Limitation
+
+The authentication log establishes that the `ubuntu` account successfully authenticated through SSH. It does **not**, by itself, establish that the login was malicious or that the system was compromised.
+
+A successful SSH login could represent legitimate administrative activity, an authorized user, or potentially an attacker using valid credentials or a compromised SSH key.
+
+Additional evidence would therefore be required to determine whether the authentication was authorized or malicious.
+
+### Finding
+
+**First observed successful SSH login for `ubuntu`: `October 22 at 08:28:00`**
+
+**Source IP:** `10.9.254.186`
+
+**Authentication method:** `publickey`
+
+**Result:** Successful authentication followed by an opened SSH session.
 
 </td>
 </tr>
@@ -77,23 +179,67 @@ cat /var/log/auth.log | grep "sshd"
 
 **Answer:** **Yes**
 
-### Evidence
+### Investigation Approach
 
-I reviewed the SSH authentication logs using the following command:
+I reviewed the SSH authentication logs using:
 
 ```bash
 cat /var/log/auth.log | grep "sshd"
 ```
 
-The relevant log entry contains:
+The relevant authentication event was:
 
 ```text
 Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 10.9.254.186 port 64824 ssh2: RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg
 ```
 
-The `Accepted publickey` portion confirms that the `ubuntu` account authenticated using an SSH public key rather than password authentication.
+### Analysis
 
-> **Verification note:** The evidence shown above is dated **Oct 22**, while Question 1 currently lists **2024-10-02**. These dates should be verified against the original Task 2 Question 1 evidence before considering this section final.
+The most important portion of the event is:
+
+```text
+Accepted publickey for ubuntu
+```
+
+This can be broken down into:
+
+- **`Accepted`** — The authentication succeeded.
+- **`publickey`** — SSH public-key authentication was used.
+- **`for ubuntu`** — The authenticated account was `ubuntu`.
+
+The log therefore indicates that the account authenticated using an SSH key rather than password authentication.
+
+The event also identifies:
+
+```text
+from 10.9.254.186
+```
+
+which identifies the source IP associated with the successful authentication.
+
+The RSA SHA256 value is the fingerprint associated with the SSH key presented during authentication.
+
+### SOC Analyst Significance
+
+Authentication method is useful during an investigation because it helps establish **how access was obtained**.
+
+However, the authentication method alone does not determine whether the activity was legitimate or malicious.
+
+Public-key authentication can be completely legitimate, but a compromised or stolen private key could also potentially be used by an unauthorized party.
+
+Therefore, in a real investigation, I would correlate the authentication event with:
+
+- The source IP address.
+- Previous authentication failures.
+- The expected owner of the account.
+- The expected SSH key or key fingerprint.
+- Login timing.
+- Commands executed after authentication.
+- Process and network activity following the session.
+
+### Finding
+
+The `ubuntu` account successfully authenticated through SSH using **public-key authentication** from `10.9.254.186` at **08:28:00 on October 22**.
 
 </td>
 </tr>
@@ -111,11 +257,16 @@ The `Accepted publickey` portion confirms that the `ubuntu` account authenticate
 
 SSH attacks can occur when public SSH access is exposed, password-based authentication is allowed, and users have weak passwords. Attackers can repeatedly attempt passwords through brute force until they successfully gain access.
 
-When investigating SSH attacks, a useful starting point is to review successful SSH logins and look for signs that separate normal activity from suspicious activity. Key indicators include:
+When investigating SSH attacks, a useful starting point is to review successful and failed SSH authentication events and look for relationships between them.
+
+Key indicators include:
 
 - **Authentication method:** Determine whether password, public-key, or another authentication method was used and whether that method is expected for the account and environment.
-- **Source IP:** External or untrusted IP addresses should be investigated.
-- **Login timing and history:** Unusual login times or successful logins following repeated failed attempts may indicate a compromise.
+- **Source IP:** Identify where the authentication attempts originated and determine whether the source is expected or suspicious.
+- **Authentication history:** Determine whether successful authentication occurred after repeated failures.
+- **Targeted accounts:** Identify which usernames were repeatedly targeted.
+- **Timing and frequency:** Look for repeated authentication attempts occurring over a short period.
+- **Post-authentication activity:** Determine what happened after successful access.
 
 A suspicious SSH login should not automatically be considered malicious. Additional investigation should include the username and whether the login was expected, the reputation and ownership of the source IP, previous login attempts or brute-force activity, and what actions occurred after the login.
 
@@ -135,17 +286,46 @@ The goal of this task is to use SSH authentication logs to identify suspicious l
 
 **Answer:** The brute force began at: `2025-08-21`
 
-### Evidence
+### Investigation Approach
 
-I reviewed the SSH authentication logs using the following command:
+I reviewed the SSH authentication log using:
 
 ```bash
 cat /var/log/auth.log | grep "Failed password"
 ```
 
-This command filters the authentication log for failed password attempts, allowing me to identify when repeated SSH password failures began.
+This search filters the authentication log for failed password-based SSH authentication attempts.
+
+The purpose of this search was to isolate authentication failures from other SSH activity and identify the earliest observed failed-password activity associated with the attack.
 
 ![SSH Brute Force Discovery](task-3-question-1.png)
+
+### SOC Analyst Interpretation
+
+A failed password event indicates that an authentication attempt was unsuccessful.
+
+Multiple failed attempts occurring against accounts from the same source, or against multiple accounts in a short period, can provide evidence of password-guessing or brute-force activity.
+
+The date shown by the lab represents the beginning of the observed failed-password activity:
+
+**August 21, 2025**
+
+However, failed authentication attempts alone do not prove that an account was compromised.
+
+To determine whether the attack resulted in successful access, I would correlate these failures with:
+
+- Successful `Accepted` authentication events.
+- The usernames being targeted.
+- Source IP addresses.
+- Number and frequency of attempts.
+- Authentication methods.
+- Activity occurring after any successful login.
+
+### Finding
+
+The earliest observed SSH failed-password activity associated with the lab's brute-force investigation began on:
+
+**`2025-08-21`**
 
 </td>
 </tr>
@@ -169,17 +349,21 @@ I initially searched the authentication log using:
 cat /var/log/auth.log | grep -E 'Accepted'
 ```
 
-This produced authentication events for users who successfully authenticated, resulting in a broad list that did not identify the usernames the botnet attempted to breach.
+This produced authentication events for users who successfully authenticated.
 
-The search was not useful for this question because `Accepted` filters for successful authentication attempts, while the question is asking which users the botnet attempted to compromise. Failed authentication attempts and attempts against invalid users provide more relevant evidence for identifying targeted usernames.
+However, this search did not directly answer the question because the investigation was asking which usernames the botnet attempted to compromise, not which users successfully authenticated.
 
-### Evidence
+### Investigative Pivot
 
-![Task 3 - Question 2](task-3-question-2.png)
+The initial query demonstrated an important SOC investigation principle: **the first search does not always produce the evidence required to answer the investigative question.**
+
+The `Accepted` filter is useful for identifying successful authentication, but it is not the appropriate filter for identifying attempted access against invalid usernames.
+
+I therefore changed the search based on the evidence I needed.
 
 ### Refined Search
 
-Since the scenario involves a botnet attempting to compromise user accounts, I focused on authentication events that indicated attempted access rather than successful authentication. I therefore changed my search to specifically identify attempts made against invalid or nonexistent usernames.
+I searched specifically for invalid-user authentication attempts:
 
 ```bash
 grep -E "Invalid user" /var/log/auth.log
@@ -187,7 +371,38 @@ grep -E "Invalid user" /var/log/auth.log
 
 ![Task 3 - Question 2 Continued](task-3-question-2-continued.png)
 
-This produced a more concise result and allowed me to identify the invalid usernames targeted during this portion of the SSH attack activity.
+This produced a more targeted view of SSH attempts against usernames that did not exist on the system.
+
+The usernames identified by the lab were:
+
+```text
+root
+roy
+sol
+user
+```
+
+### Why This Search Was More Relevant
+
+The `Invalid user` message is generated when SSH receives an authentication attempt for a username that is not recognized as a valid account on the system.
+
+This makes the search useful for identifying usernames being tested by an automated attacker or botnet.
+
+The search is more directly aligned with the investigative question because it focuses on **attempted access**, rather than successful authentication.
+
+### Evidence Limitation
+
+The `Invalid user` search identifies invalid or nonexistent usernames targeted during the observed attack activity.
+
+It does **not** necessarily identify every account the botnet attempted to compromise.
+
+If the attacker also targeted valid usernames, those attempts would appear through different authentication events, such as failed password attempts.
+
+### Finding
+
+The four usernames identified by the lab were:
+
+**`root, roy, sol, user`**
 
 </td>
 </tr>
@@ -218,7 +433,25 @@ Because the investigation focused on identifying **usernames that the botnet att
 
 This provided a more targeted and concise view of the attack activity compared to searching for multiple SSH authentication events at once.
 
-The `Invalid user` results identify invalid or nonexistent usernames targeted during the observed attack activity. They should not automatically be interpreted as every account the botnet attempted to compromise if valid usernames were also targeted.
+The refined search demonstrates an investigative workflow:
+
+```text
+Initial Question
+      ↓
+Broad Search
+      ↓
+Review Results
+      ↓
+Determine Evidence Gap
+      ↓
+Refine Search
+      ↓
+Identify Relevant Events
+      ↓
+Validate Finding
+```
+
+This is an important SOC workflow because the objective is not simply to run commands, but to select searches based on the evidence required to answer the investigative question.
 
 </td>
 </tr>
@@ -252,9 +485,11 @@ grep "Accepted" /var/log/auth.log
 
 ![Task 3 - Question 3](task-3-question-3.png)
 
-I narrowed the search to `Accepted` events because the question asks which IP managed to breach the account, indicating that a successful authentication should be present.
+I narrowed the search to `Accepted` events because the investigation required a successful authentication event.
 
-**Issue:** The results still included successful authentications for multiple users, such as `ubuntu`.
+This reduced the amount of unrelated authentication data and allowed me to focus on accounts that successfully authenticated.
+
+**Issue:** The results still included successful authentications for multiple users, including `ubuntu`.
 
 For example:
 
@@ -266,43 +501,61 @@ Accepted password for ubuntu from 10.66.105.3
 Accepted password for ubuntu from 10.66.96.246
 ```
 
-These IP addresses successfully authenticated, but they authenticated as `ubuntu`, not `root`.
+These events demonstrate successful SSH authentication, but they do not answer the question because the authenticated account was `ubuntu`, not `root`.
 
 ### Step 3 — Filter for the Root Account
+
+I refined the search again:
 
 ```bash
 grep "Accepted.*root" /var/log/auth.log
 ```
 
-I further narrowed the search by combining `Accepted` with `root`.
+This search combines the successful-authentication indicator with the specific account being investigated.
 
 - **`Accepted`** → The authentication was successful.
 - **`.*`** → Allows any characters between `Accepted` and `root`.
-- **`root`** → Limits the results to successful authentication involving the root account.
+- **`root`** → Limits the results to events involving the `root` account.
 
-This removes successful authentications for other accounts and isolates the relevant successful `root` login.
+This removes successful authentications for unrelated accounts and isolates the relevant `root` authentication event.
 
 ### Conclusion
 
-The final search is the most relevant because it specifically identifies **successful authentication events involving the `root` account**, rather than successful logins to other accounts such as `ubuntu`.
-
-The relevant log entry identifies:
+The final search produced the relevant event:
 
 ```text
 Accepted ... for root from 91.224.92.79
 ```
 
-The evidence establishes three important points:
+The event establishes:
 
-- **`Accepted`** → The authentication was successful.
-- **`for root`** → The account successfully authenticated was `root`.
-- **`from 91.224.92.79`** → `91.224.92.79` was the source IP address.
+- **`Accepted`** → Authentication succeeded.
+- **`for root`** → The authenticated account was `root`.
+- **`from 91.224.92.79`** → The source IP was `91.224.92.79`.
 
-Therefore, the IP associated with the successful SSH authentication of the `root` account was:
+Therefore, the source IP associated with the successful SSH authentication of the `root` account was:
 
 **Answer:** `91.224.92.79`
 
 ![Task 3 - Question 3 — Continued III](task-3-question-3-continued-III-three.png)
+
+### Investigation Limitation
+
+The authentication event establishes that the `root` account successfully authenticated through SSH from `91.224.92.79`.
+
+It does not independently establish everything that occurred after authentication.
+
+A complete investigation would continue by examining:
+
+- Commands executed after authentication.
+- Process creation.
+- File modifications.
+- Network connections.
+- Privilege-related activity.
+- Additional authentication events.
+- Persistence mechanisms.
+
+This distinction is important because **successful authentication is evidence of access, but not necessarily evidence of the full scope of compromise**.
 
 </td>
 </tr>
@@ -642,6 +895,22 @@ The flag was embedded directly within the Python application's source code.
 
 The Nginx access log showed an attempted command injection targeting `/opt/trypingme/main.py`. After identifying the targeted file, I inspected its contents and found the flag embedded in the source code.
 
+This creates a useful evidence chain:
+
+```text
+Suspicious HTTP Request
+        ↓
+/ping Endpoint
+        ↓
+Command Injection Attempt
+        ↓
+Targeted Python File
+        ↓
+Local File Inspection
+        ↓
+Flag Identified
+```
+
 **Answer:** `THM{i_am_vulnerable!}`
 
 </td>
@@ -834,6 +1103,14 @@ The `EXECVE` audit event is useful because it records information associated wit
 
 The results can then be reviewed for suspicious commands or processes associated with the TryPingMe application.
 
+### Investigative Reasoning
+
+The purpose of this search is not simply to find a suspicious command.
+
+The objective is to identify the **process execution event** associated with the command and obtain the identifiers needed to trace its origin.
+
+Once a suspicious execution event is identified, the `PID` and `PPID` can be used to continue the investigation.
+
 </td>
 </tr>
 </table>
@@ -866,6 +1143,14 @@ The resulting information can be used to identify the process's:
 - Execution details
 
 The PPID can then be used to identify the process responsible for launching the suspicious process.
+
+### Investigative Reasoning
+
+This step is important because identifying the suspicious command alone does not tell me what caused it to execute.
+
+By obtaining the `PPID`, I can move one level backward in the process hierarchy and determine which process launched the suspicious process.
+
+I can then repeat the process until the originating application or service is identified.
 
 </td>
 </tr>
@@ -900,6 +1185,20 @@ Suspicious Command
 This process can be repeated until the originating process is identified.
 
 The purpose is not simply to find the suspicious command, but to establish the **execution chain** that caused the command to run.
+
+### Investigative Questions
+
+At each stage of the process tree, I would ask:
+
+- What process created this process?
+- Was the parent process expected?
+- What executable launched it?
+- Which user was associated with the process?
+- Does the parent process belong to the TryPingMe application?
+- Were additional child processes created?
+- Does the process relationship support the command-injection hypothesis identified in Task 4?
+
+These questions help distinguish a suspicious command from evidence of an actual execution chain.
 
 </td>
 </tr>
@@ -954,6 +1253,20 @@ Suspicious Command
 
 Correlating these sources allows a SOC analyst to connect network/application activity with operating-system-level process execution.
 
+### Evidence Standard
+
+The goal is to determine whether the process evidence **supports or contradicts** the hypothesis developed from the application logs.
+
+For example, if the process tree shows the TryPingMe application launching a shell followed by `whoami` or `ls`, that would provide stronger host-level evidence connecting the web request to command execution.
+
+If the expected process relationship is not present, the analyst should not assume execution occurred simply because the HTTP request contained a command-injection payload.
+
+This distinction is important when separating:
+
+- **Attack attempt**
+- **Successful execution**
+- **Potential compromise**
+
 </td>
 </tr>
 </table>
@@ -982,6 +1295,24 @@ For this investigation, relevant evidence includes:
 | Command-line information | Commands executed by the process |
 
 By correlating these sources, the analyst can build a more complete timeline of the activity.
+
+The investigation can therefore progress from:
+
+```text
+Network Request
+      ↓
+Application Request
+      ↓
+Suspicious Input
+      ↓
+Process Execution
+      ↓
+Parent Process
+      ↓
+Originating Application
+```
+
+Each additional evidence source can increase confidence in the reconstructed sequence of events.
 
 </td>
 </tr>
@@ -1012,10 +1343,39 @@ However, the access log alone may not show:
 - Which parent process launched it.
 - What additional child processes were created.
 - What other commands were executed afterward.
+- Whether the attempted command actually executed successfully.
 
 Process-level evidence can help answer these questions.
 
 This is why a SOC investigation should correlate **application-level evidence with operating-system-level evidence** whenever possible.
+
+### Example of the Evidence Gap
+
+An application log may establish:
+
+```text
+Attacker
+   ↓
+Submitted command-injection payload
+```
+
+But additional host-level evidence is needed to establish:
+
+```text
+Attacker
+   ↓
+Submitted command-injection payload
+   ↓
+Application processed payload
+   ↓
+Shell/process created
+   ↓
+Command executed
+   ↓
+Child process activity occurred
+```
+
+The process tree therefore helps bridge the gap between **what was requested** and **what actually executed on the host**.
 
 </td>
 </tr>
@@ -1042,6 +1402,8 @@ A SOC analyst should also determine:
 
 Following these relationships allows the analyst to move from a single suspicious event toward a more complete execution chain.
 
+The investigation should continually distinguish between what the evidence **directly proves**, what it **suggests**, and what still requires additional validation.
+
 </td>
 </tr>
 </table>
@@ -1061,6 +1423,30 @@ By using `auditd`, `ausearch`, PIDs, and PPIDs, a SOC analyst can trace suspicio
 When combined with the Nginx access logs from the previous task, process analysis can help connect an external request to application execution and ultimately to operating-system-level activity.
 
 This demonstrates the importance of correlating **network, application, and host-based evidence** when investigating potential initial access and command execution.
+
+The overall investigation follows an evidence-driven progression:
+
+```text
+SSH Authentication Logs
+        ↓
+Identify Initial Access Activity
+        ↓
+Public-Facing Application
+        ↓
+Suspicious HTTP Requests
+        ↓
+Command Injection Attempt
+        ↓
+Targeted File
+        ↓
+Process Execution Analysis
+        ↓
+Parent/Child Process Relationships
+        ↓
+Determine the Execution Chain
+```
+
+This approach demonstrates how a SOC analyst can move from an individual log entry toward a broader understanding of **how access occurred, what activity followed, and what evidence supports the investigation's conclusions**.
 
 </td>
 </tr>
