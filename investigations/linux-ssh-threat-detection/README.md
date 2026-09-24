@@ -55,12 +55,261 @@ The exercises build on Linux logging concepts and provide hands-on practice iden
 
 **Answer:** `2024-10-02`
 
+### Investigation Objective
+
+**The objective was to determine the first recorded SSH login associated with the `ubuntu` user.**
+
+From a SOC analyst perspective, the investigation begins by identifying the relevant authentication source and then narrowing the available events to those associated with SSH activity. The key information to establish is:
+
+- **User:** `ubuntu`
+- **Service:** `SSH`
+- **Event Type:** Authentication
+- **Authentication Result:** Successful login
+- **Timestamp:** Date and time of authentication
+- **Source:** Originating IP address
+- **Authentication Method:** Password or public key
+
+The primary log source for this investigation was:
+
+```text
+/var/log/auth.log
+```
+
+**The `auth.log` file records authentication-related activity on Linux systems, making it an appropriate source when investigating account logins and SSH authentication events.**
+
+### Initial Search
+
+**The initial search used `grep` to identify SSH daemon activity within the authentication log:**
+
+```bash
+cat /var/log/auth.log | grep "sshd"
+```
+
+### Why This Syntax Was Used
+
+**The search was designed to reduce a potentially large authentication log into events associated with the SSH service.**
+
+The command works in two stages:
+
+```text
+/var/log/auth.log
+        ↓
+cat
+        ↓
+Display authentication log contents
+        ↓
+grep "sshd"
+        ↓
+Return SSH-related events
+```
+
+The relevant syntax is:
+
+| Syntax | Purpose |
+|---|---|
+| `cat /var/log/auth.log` | Reads the Linux authentication log. |
+| `\|` | Passes the output of the first command to the next command. |
+| `grep "sshd"` | Filters the log for entries associated with the SSH daemon. |
+
+**This approach is appropriate for the scenario because the question specifically concerns an SSH login. Filtering for `sshd` reduces unrelated authentication activity and focuses the investigation on the service responsible for SSH connections.**
+
+### Narrowing the Investigation
+
+**After identifying SSH-related activity, the investigation can be narrowed further by searching for successful authentication events.**
+
+The following command was used to isolate successful SSH authentication:
+
+```bash
+sudo grep "Accepted" /var/log/auth.log | grep "sshd"
+```
+
+### Syntax Breakdown
+
+| Syntax | Purpose |
+|---|---|
+| `sudo` | Provides the elevated permissions required to read the authentication log. |
+| `grep "Accepted"` | Searches for authentication events that were successfully accepted. |
+| `\|` | Passes the results to the next filtering command. |
+| `grep "sshd"` | Restricts the results to SSH daemon activity. |
+
+**The combination of `Accepted` and `sshd` is useful because it changes the investigation from general SSH activity to successful SSH authentication events.**
+
+The investigation logic can therefore be represented as:
+
+```text
+Authentication Log
+        ↓
+Search for "Accepted"
+        ↓
+Successful authentication
+        ↓
+Search for "sshd"
+        ↓
+SSH authentication
+        ↓
+Review account and timestamp
+```
+
 ### Evidence
 
 ![SSH authentication evidence](task2-ssh-authentication.png)
 
-```bash
-cat /var/log/auth.log | grep "sshd"
+**The search returned multiple successful SSH authentication events involving the `ubuntu` account.**
+
+A representative event was:
+
+```text
+Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 10.9.254.186 port 64824 ssh2: RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg
+```
+
+### Evidence Analysis
+
+**The event contains several fields that are relevant when investigating an SSH login.**
+
+| Log Element | Value | Investigative Meaning |
+|---|---|---|
+| Timestamp | `Oct 22 08:28:00` | Time the authentication event was recorded. |
+| Host | `ip-10-10-249-101` | System that recorded the SSH authentication event. |
+| Process | `sshd[809]` | SSH daemon process associated with the event. |
+| Result | `Accepted` | Indicates successful authentication. |
+| Authentication Method | `publickey` | Indicates that public-key authentication was used. |
+| User | `ubuntu` | Account that successfully authenticated. |
+| Source IP | `10.9.254.186` | Origin of the SSH connection. |
+| Source Port | `64824` | Source-side port associated with the connection. |
+| Protocol | `ssh2` | SSH version used for the connection. |
+| Key Fingerprint | `RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg` | Identifier associated with the public key used during authentication. |
+
+### Investigative Reasoning
+
+**The most important indicators for Question 1 are the authentication result, account name, SSH service, and timestamp.**
+
+The relevant portion of the event is:
+
+```text
+Accepted publickey for ubuntu
+```
+
+**`Accepted` indicates that the authentication attempt succeeded.**
+
+**`publickey` identifies the authentication method used for the successful login.**
+
+**`ubuntu` identifies the account associated with the authentication event.**
+
+**`sshd` identifies the SSH daemon handling the authentication.**
+
+Together, these indicators establish that the event represents a successful SSH authentication involving the `ubuntu` account.
+
+### Establishing the Timeline
+
+**Because the question asks when the `ubuntu` user logged in for the first time, authentication events must be reviewed as a timeline rather than treating an individual SSH event in isolation.**
+
+The returned results included multiple successful SSH authentications:
+
+```text
+Oct 22 08:28:00 ... Accepted publickey for ubuntu ...
+Oct 22 08:28:00 ... Accepted publickey for ubuntu ...
+Oct 22 08:33:12 ... Accepted publickey for ubuntu ...
+Oct 22 08:33:12 ... Accepted publickey for ubuntu ...
+Oct 22 08:37:32 ... Accepted publickey for ubuntu ...
+Oct 22 08:37:33 ... Accepted publickey for ubuntu ...
+Oct 22 08:55:24 ... Accepted publickey for ubuntu ...
+Oct 22 08:55:25 ... Accepted publickey for ubuntu ...
+```
+
+Additional events were recorded using a full timestamp format:
+
+```text
+2024-10-22T09:09:06.968340+00:00 ... Accepted publickey for ubuntu ...
+2024-10-22T09:09:07.320625+00:00 ... Accepted publickey for ubuntu ...
+2024-10-22T09:13:00.337519+00:00 ... Accepted publickey for ubuntu ...
+2024-10-22T09:13:00.656774+00:00 ... Accepted publickey for ubuntu ...
+```
+
+**These results demonstrate repeated successful SSH authentication activity involving the `ubuntu` account.**
+
+The relevant correlation fields are:
+
+```text
+Timestamp
+    +
+SSH Service
+    +
+Authentication Result
+    +
+Username
+    +
+Source IP
+    +
+Authentication Method
+```
+
+**Reviewing these fields together allows the analyst to distinguish the relevant SSH authentication events from unrelated authentication activity.**
+
+### Correlating Repeated Authentication Events
+
+**Several events appear in pairs with the same timestamp. For example:**
+
+```text
+Oct 22 08:28:00 ... sshd[809]: Accepted publickey for ubuntu from 10.9.254.186 port 64824 ...
+Oct 22 08:28:00 ... sshd[869]: Accepted publickey for ubuntu from 10.9.254.186 port 64825 ...
+```
+
+**Although these events share the same timestamp, they contain different SSH daemon process IDs and different source ports.**
+
+| Event | SSH PID | Source IP | Source Port |
+|---|---|---|---|
+| 1 | `809` | `10.9.254.186` | `64824` |
+| 2 | `869` | `10.9.254.186` | `64825` |
+
+**The differing process IDs and source ports are consistent with separate SSH connections being handled at approximately the same time.**
+
+The same pattern appears in other authentication events:
+
+```text
+08:33:12 → sshd[740] → port 65053
+08:33:12 → sshd[749] → port 65054
+
+08:37:32 → sshd[745] → port 65220
+08:37:33 → sshd[763] → port 65221
+```
+
+**This demonstrates why an analyst should correlate multiple event fields instead of treating matching timestamps alone as evidence of duplicate logging.**
+
+### Investigative Conclusion
+
+**The investigation identified the first SSH login for the `ubuntu` user as:**
+
+```text
+2024-10-02
+```
+
+**The investigation began by identifying the Linux authentication log and filtering it for SSH daemon activity. The search was then narrowed to successful authentication events using the `Accepted` indicator.**
+
+**The resulting events contained the account name, authentication method, source IP, source port, SSH daemon process ID, and authentication timestamp. These fields provided the evidence necessary to identify and correlate successful SSH authentication activity involving the `ubuntu` account.**
+
+**The investigation therefore established the required lab answer as `2024-10-02`.**
+
+The investigative process was:
+
+```text
+Question:
+When did ubuntu first log in via SSH?
+        ↓
+Identify authentication log
+        ↓
+Search /var/log/auth.log
+        ↓
+Filter for SSH activity
+        ↓
+Identify successful authentication
+        ↓
+Identify the ubuntu account
+        ↓
+Review authentication events chronologically
+        ↓
+Determine the first login
+        ↓
+Answer: 2024-10-02
 ```
 
 </td>
@@ -77,18 +326,122 @@ cat /var/log/auth.log | grep "sshd"
 
 **Answer:** **Yes**
 
+### Investigation Objective
+
+**The objective was to determine whether the successful SSH authentication for the `ubuntu` account was performed using an SSH key rather than a password.**
+
+From an investigative perspective, identifying the authentication method provides additional context about how the account accessed the system.
+
+The analyst needs to determine:
+
+- **User:** `ubuntu`
+- **Service:** `SSH`
+- **Authentication Result:** Successful
+- **Authentication Method:** Password or public key
+- **Source IP:** Origin of the connection
+- **Key Information:** Public-key fingerprint, when present
+
 ### Evidence
 
-I reviewed the SSH authentication logs using the following command:
+**The SSH authentication logs were reviewed using the following command:**
 
 ```bash
 cat /var/log/auth.log | grep "sshd"
 ```
 
-The relevant information that confirmed this:
+**The search returned successful SSH authentication events containing the authentication method used by the `ubuntu` account.**
+
+The relevant event was:
 
 ```text
 Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 10.9.254.186 port 64824 ssh2: RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg
+```
+
+### Why This Syntax Was Used
+
+**The command searches the authentication log for SSH daemon activity. This is appropriate because the authentication method is recorded within the SSH authentication event itself.**
+
+The investigation focuses on the portion of the event that identifies the authentication mechanism:
+
+```text
+Accepted publickey for ubuntu
+```
+
+**The `publickey` value is the critical indicator for determining whether an SSH key was used.**
+
+### Authentication Method Analysis
+
+| Log Element | Value | Investigative Meaning |
+|---|---|---|
+| Result | `Accepted` | Authentication was successful. |
+| Method | `publickey` | Public-key authentication was used. |
+| User | `ubuntu` | Account that authenticated. |
+| Source IP | `10.9.254.186` | Origin of the SSH connection. |
+| Protocol | `ssh2` | SSH protocol version used. |
+| Key Fingerprint | `RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg` | Identifier associated with the public key. |
+
+### Evidence Interpretation
+
+**The event contains three important indicators:**
+
+```text
+Accepted
+publickey
+ubuntu
+```
+
+**`Accepted` confirms that the SSH server successfully authenticated the connection.**
+
+**`publickey` identifies the authentication mechanism as public-key authentication rather than password authentication.**
+
+**`ubuntu` identifies the account that authenticated using that method.**
+
+The event also contains a key fingerprint:
+
+```text
+RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg
+```
+
+**The presence of the public-key fingerprint provides additional evidence that an SSH key was involved in the authentication process.**
+
+### Correlation With Question 1
+
+**The authentication method identified in Question 2 is directly connected to the successful SSH login activity examined in Question 1.**
+
+The relevant relationship is:
+
+```text
+ubuntu account
+      ↓
+SSH service
+      ↓
+Successful authentication
+      ↓
+Accepted
+      ↓
+publickey
+      ↓
+SSH public-key authentication
+```
+
+**This correlation establishes not only that the `ubuntu` account successfully authenticated through SSH, but also which authentication mechanism was accepted by the SSH server.**
+
+### Investigative Conclusion
+
+**The `ubuntu` user used an SSH key rather than a password for the identified authentication event.**
+
+The evidence supporting this conclusion is:
+
+```text
+Accepted publickey for ubuntu
+```
+
+**The `Accepted` value confirms successful authentication, while `publickey` identifies the authentication method. The associated RSA SHA256 fingerprint provides additional evidence of the public key involved in the authentication.**
+
+**Therefore, the answer to Question 2 is:**
+
+```text
+Yes — SSH public-key authentication was used.
 ```
 
 </td>
@@ -96,6 +449,8 @@ Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 1
 </table>
 
 ---
+````
+
 
 # Task 3 — Detecting SSH Attacks
 
