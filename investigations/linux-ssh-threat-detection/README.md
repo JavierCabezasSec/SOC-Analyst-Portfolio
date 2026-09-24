@@ -152,7 +152,7 @@ Review account and timestamp
 
 ### Evidence
 
-
+![Task 2 - SSH Question 1](task-2-ssh-question-1-redux.png)
 ![SSH authentication evidence](task2-ssh-authentication.png)
 
 **The search returned multiple successful SSH authentication events involving the `ubuntu` account.**
