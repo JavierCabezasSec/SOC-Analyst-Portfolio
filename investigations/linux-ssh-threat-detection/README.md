@@ -1,5 +1,3 @@
-**************** My Original Work DO NOT DELETE!!! **********
-
 # Linux Threat Detection Investigation Series
 
 ## Threat Detection 1 — Initial Access
