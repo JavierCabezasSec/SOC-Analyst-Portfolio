@@ -12,8 +12,48 @@ This investigation was conducted in a controlled TryHackMe lab environment using
 
 - **Platform:** TryHackMe
 - **Room:** Linux Threat Detection 1 v5
-- **Lab Target:** `10.66.178.85`
+- **Lab Target:** `10.66.191.146`
 - **Focus:** Linux initial access and threat detection
+
+### Lab Access
+
+The investigation was conducted from a Kali Linux virtual machine running through Oracle VirtualBox. From the Kali Linux terminal, an SSH connection was established to the assigned Ubuntu lab system.
+
+```bash
+ssh ubuntu@10.66.191.146
+```
+
+The SSH client prompted for host verification before establishing the connection:
+
+```text
+The authenticity of host '10.66.191.146 (10.66.191.146)' can't be established.
+ED25519 key fingerprint is: SHA256:hgQ6SDYXbR2pJjTZdRyXMUblBD1F8I3azgOS6lpV4eY
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+```
+
+After accepting the host key and authenticating with the `ubuntu` account, the SSH session was established:
+
+```text
+Welcome to Ubuntu 24.04.3 LTS (GNU/Linux 6.14.0-1011-aws x86_64)
+
+ubuntu@thm-vm:~$
+```
+
+This established the Kali Linux system as the analyst workstation and `10.66.191.146` as the Ubuntu Linux target used for the investigation.
+
+```text
+Oracle VirtualBox
+        ↓
+Kali Linux
+        ↓
+SSH
+        ↓
+10.66.191.146
+        ↓
+Ubuntu Lab System
+        ↓
+Investigation Environment
+```
 
 </td>
 </tr>
@@ -42,6 +82,8 @@ The exercises build on Linux logging concepts and provide hands-on practice iden
 </table>
 
 ---
+````
+
 
 # Task 2 — Initial Access via SSH
 
