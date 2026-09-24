@@ -82,7 +82,6 @@ The exercises build on Linux logging concepts and provide hands-on practice iden
 </table>
 
 ---
-````
 
 
 # Task 2 — Initial Access via SSH
