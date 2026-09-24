@@ -492,7 +492,6 @@ Yes — SSH public-key authentication was used.
 </table>
 
 ---
-````
 
 
 # Task 3 — Detecting SSH Attacks
