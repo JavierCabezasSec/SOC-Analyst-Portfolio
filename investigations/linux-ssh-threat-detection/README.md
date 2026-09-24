@@ -84,7 +84,7 @@ The exercises build on Linux logging concepts and provide hands-on practice iden
 ---
 
 
-# Task 2 — Initial Access via SSH
+# Task II — Initial Access via SSH
 
 <table width="120%">
 <tr>
@@ -494,7 +494,7 @@ Yes — SSH public-key authentication was used.
 ---
 
 
-# Task 3 — Detecting SSH Attacks
+# Task III — Detecting SSH Attacks
 
 <table width="120%">
 <tr>
@@ -699,7 +699,7 @@ Therefore, the IP that managed to breach the `root` user was:
 </tr>
 </table>
 
-# Task 4 — Initial Access via Services
+# Task IV — Initial Access via Services
 
 <table width="120%">
 <tr>
@@ -858,7 +858,7 @@ The request demonstrates an attempted command injection through the `/ping` endp
 
 **Answer:** `/opt/trypingme/main.py`
 
-## Question 5 — Looking inside the opened file, what's the flag you see there?
+## Question V — Looking inside the opened file, what's the flag you see there?
 
 **Answer:** `THM{i_am_vulnerable!}`
 
