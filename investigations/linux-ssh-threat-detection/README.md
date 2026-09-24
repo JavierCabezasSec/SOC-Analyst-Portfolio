@@ -1,6 +1,6 @@
 # Linux Threat Detection Investigation Series
 
-## Threat Detection 1 — Initial Access
+## Linux Threat Detection I — Initial Access
 
 <table width="120%">
 <tr>
