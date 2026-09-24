@@ -399,6 +399,9 @@ The relevant event was:
 ```text
 Oct 22 08:28:00 ip-10-10-249-101 sshd[809]: Accepted publickey for ubuntu from 10.9.254.186 port 64824 ssh2: RSA SHA256:krhp4o9yYOyVKmAd7PAsdHrKQGJtjIQjt4w0K9R4kXg
 ```
+Why is it relevant?: 
+
+This event is relevant because it provides direct evidence that the ubuntu account successfully authenticated to the system using SSH public-key authentication. The Accepted publickey field establishes the authentication method, while the source IP, timestamp, SSH process ID, and key fingerprint provide additional information that can be used to correlate the authentication event during the investigation.
 
 ### Why This Syntax Was Used
 
