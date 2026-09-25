@@ -760,6 +760,8 @@ I began by reviewing the Nginx access log to establish a baseline of activity ag
 cat /var/log/nginx/access.log
 ```
 
+investigations/linux-ssh-threat-detection/Task-4Question-1-SYNTAX.png
+
 The first two requests appeared consistent with normal use of the application. Both supplied an IP address to the `host` parameter:
 
 ```text
