@@ -746,7 +746,7 @@ The investigation focuses on:
 <tr>
 <td width="100%">
 
-## Question 4 — What is the path to the Python file the attacker attempted to open?
+## Question 1 — What is the path to the Python file the attacker attempted to open?
 
 **Question:** What is the path to the Python file the attacker attempted to open?
 
@@ -861,13 +861,13 @@ The request demonstrates an attempted command injection through the `/ping` endp
 
 **Answer:** `/opt/trypingme/main.py`
 
-## Question V — Looking inside the opened file, what's the flag you see there?
+## Question 2 — Looking inside the opened file, what's the flag you see there?
 
 **Answer:** `THM{i_am_vulnerable!}`
 
 ### Investigation
 
-Since Question 4 identified `/opt/trypingme/main.py` as the file the attacker attempted to read, I next inspected that file to determine what information may have been exposed:
+Since Question 1 identified `/opt/trypingme/main.py` as the file the attacker attempted to read, I next inspected that file to determine what information may have been exposed:
 
 ```bash
 cat /opt/trypingme/main.py
