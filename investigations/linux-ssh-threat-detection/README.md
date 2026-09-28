@@ -1189,7 +1189,7 @@ ausearch -i --pid 1016
 
 The result showed:
 
-![SSH authentication evidence](task2-ssh-authentication.png)
+[ausearch](ausearch.png)
 
 This established that:
 
