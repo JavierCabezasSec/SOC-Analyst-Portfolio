@@ -1189,7 +1189,7 @@ ausearch -i --pid 1016
 
 The result showed:
 
-[ausearch](ausearch.png)
+![ausearch](investigations/linux-ssh-threat-detection/ausearch.png)
 
 This established that:
 
