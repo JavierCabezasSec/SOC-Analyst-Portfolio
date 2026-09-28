@@ -1189,12 +1189,7 @@ ausearch -i --pid 1016
 
 The result showed:
 
-```text
-type=PROCTITLE msg=audit(08/26/25 20:09:46.269:154) : proctitle=/bin/sh -c ping -c 2 whoami
-type=CWD msg=audit(08/26/25 20:09:46.269:154) : cwd=/opt/trypingme
-type=EXECVE msg=audit(08/26/25 20:09:46.269:154) : argc=3 a0=/bin/sh a1=-c a2=ping -c 2 whoami
-type=SYSCALL msg=audit(08/26/25 20:09:46.269:154) : arch=x86_64 syscall=execve success=yes exit=0 a0=0x7ef5401797c0 a1=0x7ef53e636790 a2=0x7ffeb1260660 a3=0x8 items=2 ppid=577 pid=1016 auid=unset uid=ubuntu gid=ubuntu euid=ubuntu suid=ubuntu fsuid=ubuntu egid=ubuntu sgid=ubuntu fsgid=ubuntu tty=(none) ses=unset comm=sh exe=/usr/bin/dash subj=unconfined key=exec
-```
+![SSH authentication evidence](task2-ssh-authentication.png)
 
 This established that:
 
