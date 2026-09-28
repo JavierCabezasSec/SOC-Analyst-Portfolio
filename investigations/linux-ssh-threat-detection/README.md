@@ -1125,37 +1125,210 @@ The investigation therefore connects the evidence across multiple layers:
 
 ## Investigation Overview
 
-Application logs can provide valuable evidence when investigating a service breach, as demonstrated in the previous task. However, 
+Application logs can provide valuable evidence when investigating a service breach, as demonstrated in the previous task. However,
 application logs may not always be available, complete, or sufficient to determine how an attacker gained initial access.
 
-Process tree analysis provides another method for investigating suspicious activity 
-by tracing a process back through its parent and grandparent processes. 
-This allows a SOC analyst to determine what launched a suspicious command and whether it 
+Process tree analysis provides another method for investigating suspicious activity
+by tracing a process back through its parent and grandparent processes.
+This allows a SOC analyst to determine what launched a suspicious command and whether it
 originated from legitimate activity, a system process, or a potentially compromised application.
 
 In this task, I will use Linux `auditd` logs and the `ausearch` command to trace suspicious processes back to their origin.
 
-The investigation will focus on the **TryPingMe application** examined in the previous task and use process relationships to determine 
+The investigation will focus on the **TryPingMe application** examined in the previous task and use process relationships to determine
 how suspicious commands were executed.
 
 ## What to Expect
 
-This task will focus on using **process IDs (`PID`)** and **parent process IDs (`PPID`)** to reconstruct the sequence of processes 
+This task will focus on using **process IDs (`PID`)** and **parent process IDs (`PPID`)** to reconstruct the sequence of processes
 involved in suspicious activity.
 
 The investigation will include:
 
-- Searching `auditd` logs for suspicious commands.
-- Identifying the `PID` and `PPID` associated with a process.
-- Using `ausearch` to trace a suspicious process back to its parent.
-- Continuing up the process tree until reaching the originating application.
-- Examining other child processes launched by the application.
-- Identifying commands that may provide stronger evidence of a service breach.
-- Using the process tree to understand how initial access may have led to command execution.
+* Searching `auditd` logs for suspicious commands.
+* Identifying the `PID` and `PPID` associated with a process.
+* Using `ausearch` to trace a suspicious process back to its parent.
+* Continuing up the process tree until reaching the originating application.
+* Examining other child processes launched by the application.
+* Identifying commands that may provide stronger evidence of a service breach.
+* Using the process tree to understand how initial access may have led to command execution.
 
 The goal is to move beyond identifying **what command was executed** and determine **why it was executed and what process caused it to run**.
 
-</td>
-</tr>
-</table>
+## Question 1 — What is the PPID of the suspicious `whoami` command?
 
+### Step 1 — Search the Audit Logs for Process Execution
+
+I started by reviewing the Linux `auditd` logs for process execution events.
+
+A broad search produced a large amount of audit data, so I filtered the results for `PROCTITLE` entries to identify commands and processes that were executed.
+
+```bash
+ausearch -i | grep "PROCTITLE"
+```
+
+This produced several useful entries, including:
+
+```text
+type=PROCTITLE msg=audit(08/26/25 20:09:43.003:152) : proctitle=/bin/sh -c ping -c 2 hello
+type=PROCTITLE msg=audit(08/26/25 20:09:46.269:154) : proctitle=/bin/sh -c ping -c 2 whoami
+type=PROCTITLE msg=audit(08/26/25 20:09:46.270:155) : proctitle=ping -c 2 whoami
+type=PROCTITLE msg=audit(08/26/25 20:09:49.738:156) : proctitle=/bin/sh -c ping -c 2 ;whoami
+type=PROCTITLE msg=audit(08/26/25 20:09:49.739:157) : proctitle=ping -c 2
+type=PROCTITLE msg=audit(08/26/25 20:09:49.742:158) : proctitle=whoami
+```
+
+The final entry is particularly important:
+
+```text
+type=PROCTITLE msg=audit(08/26/25 20:09:49.742:158) : proctitle=whoami
+```
+
+This identifies an actual execution of the `whoami` process.
+
+### Step 2 — Identify the PID and PPID
+
+To investigate the process further, I searched for the PID associated with the shell execution that preceded the suspicious command.
+
+```bash
+ausearch -i --pid 1016
+```
+
+The result showed:
+
+```text
+type=PROCTITLE msg=audit(08/26/25 20:09:46.269:154) : proctitle=/bin/sh -c ping -c 2 whoami
+type=CWD msg=audit(08/26/25 20:09:46.269:154) : cwd=/opt/trypingme
+type=EXECVE msg=audit(08/26/25 20:09:46.269:154) : argc=3 a0=/bin/sh a1=-c a2=ping -c 2 whoami
+type=SYSCALL msg=audit(08/26/25 20:09:46.269:154) : arch=x86_64 syscall=execve success=yes exit=0 a0=0x7ef5401797c0 a1=0x7ef53e636790 a2=0x7ffeb1260660 a3=0x8 items=2 ppid=577 pid=1016 auid=unset uid=ubuntu gid=ubuntu euid=ubuntu suid=ubuntu fsuid=ubuntu egid=ubuntu sgid=ubuntu fsgid=ubuntu tty=(none) ses=unset comm=sh exe=/usr/bin/dash subj=unconfined key=exec
+```
+
+This established that:
+
+```text
+PID 1016
+PPID 577
+Process: /bin/sh
+```
+
+I then examined the later shell execution associated with the suspicious command:
+
+```text
+type=PROCTITLE msg=audit(08/26/25 20:09:49.738:156) : proctitle=/bin/sh -c ping -c 2 ;whoami
+type=CWD msg=audit(08/26/25 20:09:49.738:156) : cwd=/opt/trypingme
+type=EXECVE msg=audit(08/26/25 20:09:49.738:156) : argc=3 a0=/bin/sh a1=-c a2=ping -c 2 ;whoami
+type=SYSCALL msg=audit(08/26/25 20:09:49.738:156) : arch=x86_64 syscall=execve success=yes exit=0 a0=0x7ef5401797b0 a1=0x7ef53e636870 a2=0x7ffeb1260660 a3=0x8 items=2 ppid=577 pid=1018 auid=unset uid=ubuntu gid=ubuntu euid=ubuntu suid=ubuntu fsuid=ubuntu egid=ubuntu sgid=ubuntu fsgid=ubuntu tty=(none) ses=unset comm=sh exe=/usr/bin/dash subj=unconfined key=exec
+```
+
+This showed that **PID 1018 was the shell process executing the command containing `;whoami`**.
+
+At this point, `1018` was identified as the suspicious shell's **PID**, but that alone does not answer the question.
+
+The question asks for the **PPID of `whoami`**, so I needed to examine the actual `whoami` process.
+
+### Step 3 — Investigate the Children of PID 1018
+
+I used the following command:
+
+```bash
+ausearch -i --ppid 1018
+```
+
+This searches for processes whose **parent process ID is 1018**.
+
+The results showed:
+
+```text
+type=PROCTITLE msg=audit(08/26/25 20:09:49.739:157) : proctitle=ping -c 2
+type=CWD msg=audit(08/26/25 20:09:49.739:157) : cwd=/opt/trypingme
+type=EXECVE msg=audit(08/26/25 20:09:49.739:157) : argc=3 a0=ping a1=-c a2=2
+type=SYSCALL msg=audit(08/26/25 20:09:49.739:157) : arch=x86_64 syscall=execve success=yes exit=0 a0=0x57c319d496b8 a1=0x57c312f7e608 a2=0x57c312f7e628 a3=0x1 items=2 ppid=1018 pid=1019 auid=unset uid=ubuntu gid=ubuntu euid=ubuntu suid=ubuntu fsuid=ubuntu egid=ubuntu sgid=ubuntu fsgid=ubuntu tty=(none) ses=unset comm=ping exe=/usr/bin/ping subj=unconfined key=exec
+```
+
+And:
+
+```text
+type=PROCTITLE msg=audit(08/26/25 20:09:49.742:158) : proctitle=whoami
+type=CWD msg=audit(08/26/25 20:09:49.742:158) : cwd=/opt/trypingme
+type=EXECVE msg=audit(08/26/25 20:09:49.742:158) : argc=1 a0=whoami
+type=SYSCALL msg=audit(08/26/25 20:09:49.742:158) : arch=x86_64 syscall=execve success=yes exit=0 a0=0x57c312f7e650 a1=0x57c312f7e5d8 a2=0x57c312f7e5e8 a3=0x8 items=2 ppid=1018 pid=1020 auid=unset uid=ubuntu gid=ubuntu euid=ubuntu suid=ubuntu fsuid=ubuntu egid=ubuntu sgid=ubuntu fsgid=ubuntu tty=(none) ses=unset comm=whoami exe=/usr/bin/whoami subj=unconfined key=exec
+```
+
+This is the key evidence.
+
+The `whoami` process has:
+
+```text
+pid=1020
+ppid=1018
+comm=whoami
+exe=/usr/bin/whoami
+```
+
+This means:
+
+* `PID 1020` is the `whoami` process.
+* `PPID 1018` identifies its parent process.
+* `comm=whoami` confirms that the process being described is actually `whoami`.
+
+The relationship can therefore be represented as:
+
+```text
+PID 1018
+/bin/sh
+   |
+   +---- PID 1019
+   |     ping -c 2
+   |
+   +---- PID 1020
+         whoami
+```
+
+### Step 4 — Verify the `whoami` Process Directly
+
+To verify the evidence from the parent-process search, I searched directly for PID 1020:
+
+```bash
+ausearch -i --pid 1020
+```
+
+The result again showed:
+
+```text
+type=PROCTITLE msg=audit(08/26/25 20:09:49.742:158) : proctitle=whoami
+type=CWD msg=audit(08/26/25 20:09:49.742:158) : cwd=/opt/trypingme
+type=EXECVE msg=audit(08/26/25 20:09:49.742:158) : argc=1 a0=whoami
+type=SYSCALL msg=audit(08/26/25 20:09:49.742:158) : arch=x86_64 syscall=execve success=yes exit=0 a0=0x57c312f7e650 a1=0x57c312f7e5d8 a2=0x57c312f7e5e8 a3=0x8 items=2 ppid=1018 pid=1020 auid=unset uid=ubuntu gid=ubuntu euid=ubuntu suid=ubuntu fsuid=ubuntu egid=ubuntu sgid=ubuntu fsgid=ubuntu tty=(none) ses=unset comm=whoami exe=/usr/bin/whoami subj=unconfined key=exec
+```
+
+This confirms the relationship:
+
+```text
+PID 1020 = whoami
+PPID = 1018
+```
+
+Therefore, the answer to Question 1 is:
+
+```text
+1018
+```
+
+### Process Tree Reconstructed So Far
+
+The audit records allow the process relationship to be reconstructed as:
+
+```text
+PID 577
+   |
+   +---- PID 1018
+         /bin/sh -c "ping -c 2 ;whoami"
+              |
+              +---- PID 1019
+              |     ping -c 2
+              |
+              +---- PID 1020
+                    whoami
+```
+
+This is important because the investigation is no longer based only on the
