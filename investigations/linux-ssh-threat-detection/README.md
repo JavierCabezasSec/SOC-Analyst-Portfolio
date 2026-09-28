@@ -1169,14 +1169,7 @@ ausearch -i | grep "PROCTITLE"
 
 This produced several useful entries, including:
 
-```text
-type=PROCTITLE msg=audit(08/26/25 20:09:43.003:152) : proctitle=/bin/sh -c ping -c 2 hello
-type=PROCTITLE msg=audit(08/26/25 20:09:46.269:154) : proctitle=/bin/sh -c ping -c 2 whoami
-type=PROCTITLE msg=audit(08/26/25 20:09:46.270:155) : proctitle=ping -c 2 whoami
-type=PROCTITLE msg=audit(08/26/25 20:09:49.738:156) : proctitle=/bin/sh -c ping -c 2 ;whoami
-type=PROCTITLE msg=audit(08/26/25 20:09:49.739:157) : proctitle=ping -c 2
-type=PROCTITLE msg=audit(08/26/25 20:09:49.742:158) : proctitle=whoami
-```
+![Process title evidence](Proctitle.png)
 
 The final entry is particularly important:
 
