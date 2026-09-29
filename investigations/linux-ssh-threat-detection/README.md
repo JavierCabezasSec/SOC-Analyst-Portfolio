@@ -1317,6 +1317,10 @@ PID 577
                     whoami
 ```
 
+<table width="120%">
+<tr>
+<td width="100%">
+        
 ## Question 2 — Moving Up the Tree, What Is the PID of the TryPingMe App?
 
 **Question:** Moving up the tree, what is the PID of the TryPingMe app?
@@ -1577,3 +1581,7 @@ PID 1018
 /bin/sh -c "ping -c 2 ;whoami"
 ```
 The timestamps provide temporal context showing that the TryPingMe process execution preceded the suspicious shell event. The timestamps alone do not establish the parent-child relationship. That relationship is established by the `pid` and `ppid` fields: `ppid=577`.
+
+<table width="120%">
+<tr>
+<td width="100%">
