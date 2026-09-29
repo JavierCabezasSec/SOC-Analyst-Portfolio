@@ -1317,15 +1317,178 @@ PID 577
                     whoami
 ```
 
-<table width="120%">
-<tr>
-<td width="100%">
+## Question 2 — Moving Up the Tree, What Is the PID of the TryPingMe App?
 
-## Question 2 — Moving up the tree, what is the PID of the TryPingMe app?
+**Question:** Moving up the tree, what is the PID of the TryPingMe app?
 
-### Step 1 — Trace the Parent Process
+**Answer:** `577`
 
-To move up the process tree, I needed to identify what process launched the suspicious shell (`PID 1018`). 
+### Step 1 — Identify the Parent of the Suspicious Shell
 
-From the previous step, the audit logs for `PID 1018` listed its Parent Process ID as **`ppid=577`**.
+In the previous question, `PID 1018` was identified as the shell responsible for executing the suspicious command:
 
+```text
+/bin/sh -c ping -c 2 ;whoami
+```
+
+The corresponding `SYSCALL` audit record contains:
+
+```text
+ppid=577 pid=1018
+```
+
+The `pid` identifies the shell process, while the `ppid` identifies its parent process.
+
+Therefore:
+
+```text
+PID 577
+   |
+   └── PID 1018
+```
+
+`PID 577` is the parent process of the suspicious shell.
+
+### Step 2 — Investigate PID 577
+
+I then searched the audit logs for `PID 577`:
+
+```bash
+ausearch -i --pid 577
+```
+
+The relevant audit event showed:
+
+```text
+type=PROCTITLE msg=audit(08/26/25 20:07:48.305:88) : proctitle=/usr/bin/python3 /opt/trypingme/main.py
+type=CWD msg=audit(08/26/25 20:07:48.305:88) : cwd=/opt/trypingme
+type=EXECVE msg=audit(08/26/25 20:07:48.305:88) : argc=2 a0=/usr/bin/python3 a1=/opt/trypingme/main.py
+type=SYSCALL msg=audit(08/26/25 20:07:48.305:88) : arch=x86_64 syscall=execve success=yes exit=0 a0=0x640a321acbf0 a1=0x640a321ae620 a2=0x640a321aff90 a3=0x640a321abb90 items=2 ppid=1 pid=577 auid=unset uid=ubuntu gid=ubuntu euid=ubuntu suid=ubuntu fsuid=ubuntu egid=ubuntu sgid=ubuntu fsgid=ubuntu tty=(none) ses=unset comm=python3 exe=/usr/bin/python3.12 subj=unconfined key=exec
+```
+
+### Step 3 — Identify the TryPingMe Process
+
+The `PROCTITLE` record shows that `PID 577` executed:
+
+```text
+/usr/bin/python3 /opt/trypingme/main.py
+```
+
+The `EXECVE` record independently confirms:
+
+```text
+a0=/usr/bin/python3
+a1=/opt/trypingme/main.py
+```
+
+This identifies `PID 577` as the process running the TryPingMe application.
+
+The relevant process information is:
+
+* **PID:** `577`
+* **Executable:** `/usr/bin/python3.12`
+* **Script:** `/opt/trypingme/main.py`
+
+The `CWD` record also places the process in:
+
+```text
+/opt/trypingme
+```
+
+This provides additional context supporting the identification of the application.
+
+### Step 4 — Correlate the Parent-Child Relationship
+
+The suspicious shell's audit record established:
+
+```text
+ppid=577 pid=1018
+```
+
+The audit record for `PID 577` established:
+
+```text
+pid=577
+proctitle=/usr/bin/python3 /opt/trypingme/main.py
+```
+
+Combining these records produces the following process relationship:
+
+```text
+PID 577
+/usr/bin/python3 /opt/trypingme/main.py
+        |
+        └── PID 1018
+            /bin/sh -c "ping -c 2 ;whoami"
+                |
+                ├── PID 1019
+                │   ping -c 2
+                │
+                └── PID 1020
+                    whoami
+```
+
+### Step 5 — Continue Up the Process Tree
+
+The audit record for `PID 577` contains:
+
+```text
+ppid=1 pid=577
+```
+
+This shows that `PID 577` itself was a child of `PID 1`.
+
+The reconstructed process tree is therefore:
+
+```text
+PID 1
+└── PID 577
+    /usr/bin/python3 /opt/trypingme/main.py
+        |
+        └── PID 1018
+            /bin/sh -c "ping -c 2 ;whoami"
+                |
+                ├── PID 1019
+                │   ping -c 2
+                │
+                └── PID 1020
+                    whoami
+```
+
+The relevant chain from the suspicious command back to the application is:
+
+```text
+PID 1020 — whoami
+        ↑
+PPID 1018
+        ↑
+PID 1018 — /bin/sh
+        ↑
+PPID 577
+        ↑
+PID 577 — /usr/bin/python3 /opt/trypingme/main.py
+```
+
+### Investigative Reasoning
+
+The `auditd` records allow the process hierarchy to be reconstructed using the `pid` and `ppid` fields.
+
+`PID 1020` (`whoami`) was spawned by `PID 1018`, which was executing:
+
+```text
+/bin/sh -c "ping -c 2 ;whoami"
+```
+
+`PID 1018` has `PPID 577`, linking it directly to the process running:
+
+```text
+/usr/bin/python3 /opt/trypingme/main.py
+```
+
+This establishes that the suspicious shell was a child process of the TryPingMe application.
+
+### Conclusion
+
+The audit logs identify `PID 577` as the process running `/opt/trypingme/main.py`. The same PID is recorded as the parent of the shell that executed the suspicious command.
+
+**Answer:** `577`
