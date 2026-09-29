@@ -1177,6 +1177,7 @@ The final entry is particularly important:
 type=PROCTITLE msg=audit(08/26/25 20:09:49.742:158) : proctitle=whoami
 ```
 
+## Question 2 — Moving up the tree, what is the PID of the TryPingMe app?
 This identifies an actual execution of the `whoami` process.
 
 ### Step 2 — Identify the PID and PPID
