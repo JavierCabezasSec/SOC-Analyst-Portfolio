@@ -1437,12 +1437,7 @@ ausearch -i --pid 577
 
 The audit logs returned:
 
-```text
-type=PROCTITLE msg=audit(08/26/25 20:07:48.305:88) : proctitle=/usr/bin/python3 /opt/trypingme/main.py
-type=CWD msg=audit(08/26/25 20:07:48.305:88) : cwd=/opt/trypingme
-type=EXECVE msg=audit(08/26/25 20:07:48.305:88) : argc=2 a0=/usr/bin/python3 a1=/opt/trypingme/main.py
-type=SYSCALL msg=audit(08/26/25 20:07:48.305:88) : arch=x86_64 syscall=execve success=yes exit=0 a0=0x640a321acbf0 a1=0x640a321ae620 a2=0x640a321aff90 a3=0x640a321abb90 items=2 ppid=1 pid=577 auid=unset uid=ubuntu gid=ubuntu euid=ubuntu suid=ubuntu fsuid=ubuntu egid=ubuntu sgid=ubuntu fsgid=ubuntu tty=(none) ses=unset comm=python3 exe=/usr/bin/python3.12 subj=unconfined key=exec
-```
+![Task 5 - Question 2 - Part II](Task-5-Question-2-Part%20II.png)
 
 This record identifies what was running under PID `577`.
 
