@@ -1329,6 +1329,3 @@ To move up the process tree, I needed to identify what process launched the susp
 
 From the previous step, the audit logs for `PID 1018` listed its Parent Process ID as **`ppid=577`**.
 
-<table width="120%">
-<tr>
-<td width="100%">
