@@ -1651,6 +1651,3 @@ a1=/opt/trypingme/main.py
 ```
 
 The investigation therefore proves that the suspicious command tree originates directly from the running TryPingMe application under **PID 577**.
-<table width="120%">
-<tr>
-<td width="100%">
