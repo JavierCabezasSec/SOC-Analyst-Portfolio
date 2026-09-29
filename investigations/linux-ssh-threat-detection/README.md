@@ -1341,12 +1341,7 @@ The `ausearch` command searches the Linux `auditd` logs. The `-i` option interpr
 
 The command returned the following execution records:
 
-```text
-type=PROCTITLE msg=audit(08/26/25 20:09:49.738:156) : proctitle=/bin/sh -c ping -c 2 ;whoami
-type=CWD msg=audit(08/26/25 20:09:49.738:156) : cwd=/opt/trypingme
-type=EXECVE msg=audit(08/26/25 20:09:49.738:156) : argc=3 a0=/bin/sh a1=-c a2=ping -c 2 ;whoami
-type=SYSCALL msg=audit(08/26/25 20:09:49.738:156) : arch=x86_64 syscall=execve success=yes exit=0 a0=0x7ef5401797b0 a1=0x7ef53e636870 a2=0x7ffeb1260660 a3=0x8 items=2 ppid=577 pid=1018 auid=unset uid=ubuntu gid=ubuntu euid=ubuntu suid=ubuntu fsuid=ubuntu egid=ubuntu sgid=ubuntu fsgid=ubuntu tty=(none) ses=unset comm=sh exe=/usr/bin/dash subj=unconfined key=exec
-```
+![Task 5 - Question 2 - Part I](Task-5-Question-2-Part I.png)
 
 #### PROCTITLE — Command Executed
 
