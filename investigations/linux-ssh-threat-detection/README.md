@@ -1177,9 +1177,6 @@ The final entry is particularly important:
 type=PROCTITLE msg=audit(08/26/25 20:09:49.742:158) : proctitle=whoami
 ```
 
-## Question 2 — Moving up the tree, what is the PID of the TryPingMe app?
-This identifies an actual execution of the `whoami` process.
-
 ### Step 2 — Identify the PID and PPID
 
 To investigate the process further, I searched for the PID associated with the shell execution that preceded the suspicious command.
@@ -1320,3 +1317,14 @@ PID 577
                     whoami
 ```
 
+<table width="120%">
+<tr>
+<td width="100%">
+
+## Question 2 — Moving up the tree, what is the PID of the TryPingMe app?
+
+### Step 1 — Trace the Parent Process
+
+To move up the process tree, I needed to identify what process launched the suspicious shell (`PID 1018`). 
+
+From the previous step, the audit logs for `PID 1018` listed its Parent Process ID as **`ppid=577`**.
