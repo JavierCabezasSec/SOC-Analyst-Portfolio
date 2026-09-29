@@ -1341,7 +1341,7 @@ The `ausearch` command searches the Linux `auditd` logs. The `-i` option interpr
 
 The command returned the following execution records:
 
-![Task 5 - Question 2 - Part I](Task-5-Question-2-Part I.png)
+![Task 5 - Question 2 - Part I](Task-5-Question-2-Part%20I.png)
 
 #### PROCTITLE — Command Executed
 
