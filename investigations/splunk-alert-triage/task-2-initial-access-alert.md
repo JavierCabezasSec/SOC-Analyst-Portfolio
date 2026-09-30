@@ -22,26 +22,118 @@ The investigation also examines activity following the successful authentication
 | **Primary Log Source** | Linux SSH Authentication Logs |
 | **Investigation Tool** | Splunk SIEM |
 
-## Question 1 — Failed Login Attempts
+# Question 1 — Failed Login Attempts
 
-### Question
+## Question
 How many failed login attempts were made on the user john.smith?
 
-### Investigation
-The first step was to identify authentication failures associated with the targeted account. The search filtered the `linux-alert` index for events where `user_name = john.smith` and `vendor_action = Failed`.
+## Investigation Objective
+The first objective was to determine whether the alert represented repeated authentication failures against a specific account and quantify the volume of failed login attempts. The investigation began by filtering the Linux authentication events for:
+* **Target account:** john.smith
+* **Authentication result:** Failed
+* **Index:** linux-alert
 
-### Splunk Search
+This establishes the investigation scope around failed authentication activity rather than searching the entire dataset for unrelated events.
+
+---
+
+## Investigative Steps
+
+### Step 1 — Isolate Failed Authentication Events
+The following Splunk search was used to identify failed authentication attempts against john.smith:
 ```splunk
 index=linux-alert user_name="john.smith" vendor_action=Failed
 ```
 
-### Investigation Result
-The search returned approximately **500 failed authentication attempts**. These repeated failed authentication events against the same account are consistent with automated password-guessing activity.
+#### Search Logic
 
-### Finding
-* **john.smith** was targeted by approximately 500 failed login attempts.
+| Search Component | Purpose |
+| :--- | :--- |
+| `index=linux-alert` | Restricts the investigation to the Linux security alert data |
+| `user_name="john.smith"` | Limits results to authentication activity involving the targeted account |
+| `vendor_action=Failed` | Filters specifically for unsuccessful authentication attempts |
+
+This search returned approximately **500 events**. At this stage, the result establishes a high volume of failed authentication activity against a single account.
+
+### Step 2 — Quantify the Authentication Failures
+The next step was to quantify the events rather than relying on the number of results displayed in the Splunk interface. The following search can be used to explicitly count the matching authentication events:
+```splunk
+index=linux-alert user_name="john.smith" vendor_action=Failed
+| stats count as failed_attempts
+```
+
+#### Result
+* `failed_attempts = 500`
+
+This establishes that the account john.smith experienced 500 failed authentication attempts within the investigated activity window.
+
+### Step 3 — Identify the Source of the Authentication Attempts
+After establishing the volume of failed authentication activity, the next investigative question was: *Where were the authentication attempts originating from?* 
+
+The source IP was investigated to determine whether the failed attempts were associated with a consistent originating system.
+```splunk
+index=linux-alert src_ip="10.10.242.248"
+| stats count by user_name vendor_action
+| sort - count
+```
+
+#### Investigation Result
+* The source IP **10.10.242.248** was associated with the authentication activity against john.smith.
+* The activity showed repeated failed authentication attempts against the same account.
+
+This correlation is important because it connects the high-volume authentication failures to a specific source rather than treating the 500 failures as isolated events.
+
+### Step 4 — Establish the Attack Pattern
+The investigation then considered the relationship between the key components:
+```text
+Source IP (10.10.242.248) ➔ Target Account (john.smith) ➔ Authentication Result (Failed) ➔ Volume (500 attempts)
+```
+The repeated failures were not simply a single failed login followed by normal user behavior. Instead, the evidence showed:
+* A single account was repeatedly targeted.
+* The authentication attempts originated from the same identified source IP.
+* The authentication result was consistently recorded as Failed.
+* The total volume reached approximately 500 attempts.
+
+This pattern is consistent with automated or repeated password-guessing activity and warranted further investigation into whether the attacker eventually obtained valid credentials.
+
+### Step 5 — Investigate Whether the Attack Eventually Succeeded
+Because a high number of failed authentication attempts does not by itself prove that an account was compromised, the investigation continued by looking for successful authentication activity involving the same account and source IP.
+
+The investigation identified the following successful SSH authentication:
+```text
+2025-09-17 09:06:01.591
+tryhackme-2404 sshd[3007]: Accepted password for john.smith from 10.10.242.248 port 35932 ssh2
+```
+This event is significant because it connects the earlier failed authentication activity to a successful login. 
+
+#### Attack Chain Sequence
+```text
+Source IP: 10.10.242.248
+        ↓
+Repeated failed authentication (~500 failed attempts)
+        ↓
+Successful password authentication
+        ↓
+Target Account: john.smith
+        ↓
+SSH session established
+```
+The successful authentication occurred on the same host and involved the same source IP associated with the failed authentication activity.
 
 ---
+
+## Investigation Assessment
+The evidence establishes that 500 failed authentication attempts were made against the john.smith account. The activity originated from 10.10.242.248 and was followed by a successful SSH password authentication for the same account.
+
+This highlights an important distinction in the investigation:
+* **Failed-login count alone** establishes repeated authentication activity.
+* **Subsequent successful authentication** provides evidence that the activity progressed beyond unsuccessful access attempts.
+
+The investigation therefore did not stop after identifying the 500 failures. The failed attempts were correlated with the source IP and subsequent authentication activity to determine whether the attack resulted in successful access.
+
+## Finding
+* **500 failed login attempts** were made against john.smith.
+* The authentication activity originated from **10.10.242.248** and was subsequently followed by a **successful SSH password authentication** for john.smith, providing a basis for continuing the investigation into privilege escalation and persistence.
 
 ## Question 2 — Brute-Force Attack Duration
 
