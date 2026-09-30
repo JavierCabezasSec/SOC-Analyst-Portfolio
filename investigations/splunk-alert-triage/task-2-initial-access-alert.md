@@ -22,6 +22,8 @@ The investigation also examines activity following the successful authentication
 | **Primary Log Source** | Linux SSH Authentication Logs |
 | **Investigation Tool** | Splunk SIEM |
 
+---
+
 # Question 1 — Failed Login Attempts
 
 ## Question
@@ -134,6 +136,8 @@ The investigation therefore did not stop after identifying the 500 failures. The
 ## Finding
 * **500 failed login attempts** were made against john.smith.
 * The authentication activity originated from **10.10.242.248** and was subsequently followed by a **successful SSH password authentication** for john.smith, providing a basis for continuing the investigation into privilege escalation and persistence.
+
+---
 
 ## Question 2 — Brute-Force Attack Duration
 
@@ -329,3 +333,4 @@ The evidence establishes the following attack sequence:
 Brute Force ➔ Successful Authentication ➔ Privilege Escalation ➔ Root Access ➔ Account Creation ➔ Persistence
 ```
 The investigation demonstrates the use of Splunk to correlate authentication failures, successful SSH authentication, privilege escalation, and account-creation activity into a single attack timeline.
+---
