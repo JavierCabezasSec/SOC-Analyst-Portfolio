@@ -23,6 +23,7 @@ The investigation also examines activity following the successful authentication
 | **Investigation Tool** | Splunk SIEM |
 
 ---
+<br><hr><br>
 
 # Question 1 — Failed Login Attempts
 
@@ -138,6 +139,7 @@ The investigation therefore did not stop after identifying the 500 failures. The
 * The authentication activity originated from **10.10.242.248** and was subsequently followed by a **successful SSH password authentication** for john.smith, providing a basis for continuing the investigation into privilege escalation and persistence.
 
 ---
+<br><hr><br>
 
 ## Question 2 — Brute-Force Attack Duration
 
