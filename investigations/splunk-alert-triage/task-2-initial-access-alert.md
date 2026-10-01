@@ -1,338 +1,321 @@
 # Task 2 — Initial Access Alert
 
-## Investigation Overview
-This investigation focuses on a suspected brute-force attack against the Linux host **tryhackme-2404**.
-
-The alert was generated after suspicious authentication activity was detected from the source IP address **10.10.242.248**. The investigation uses Splunk SIEM to analyze Linux authentication logs, identify the accounts targeted by the activity, determine whether authentication attempts were successful, and assess whether the alert represents a true security incident.
-
-The investigation also examines activity following the successful authentication to determine whether the attacker was able to escalate privileges or establish persistence on the compromised system.
-
-## Alert Details
-
-| Field | Details |
-| :--- | :--- |
-| **Alert Name** | Brute Force Activity Detection |
-| **Date** | 17/09/2025 |
-| **Alert Time** | 9:00:21 AM |
-| **Target Host** | tryhackme-2404 |
-| **Source IP** | 10.10.242.248 |
-| **Splunk Index** | linux-alert |
-| **Sourcetype** | linux_secure |
-| **Alert Type** | Suspected Brute-Force Activity |
-| **Primary Log Source** | Linux SSH Authentication Logs |
-| **Investigation Tool** | Splunk SIEM |
-
----
-<br><hr><br>
-
-# Question 1 — Failed Login Attempts
-
-## Question
-How many failed login attempts were made on the user john.smith?
-
-## Investigation Objective
-The first objective was to determine whether the alert represented repeated authentication failures against a specific account and quantify the volume of failed login attempts. The investigation began by filtering the Linux authentication events for:
-* **Target account:** john.smith
-* **Authentication result:** Failed
-* **Index:** linux-alert
-
-This establishes the investigation scope around failed authentication activity rather than searching the entire dataset for unrelated events.
-
----
-
-## Investigative Steps
-
-### Step 1 — Isolate Failed Authentication Events
-The following Splunk search was used to identify failed authentication attempts against john.smith:
-```splunk
-index=linux-alert user_name="john.smith" vendor_action=Failed
-```
-
-#### Search Logic
-
-| Search Component | Purpose |
-| :--- | :--- |
-| `index=linux-alert` | Restricts the investigation to the Linux security alert data |
-| `user_name="john.smith"` | Limits results to authentication activity involving the targeted account |
-| `vendor_action=Failed` | Filters specifically for unsuccessful authentication attempts |
-
-This search returned approximately **500 events**. At this stage, the result establishes a high volume of failed authentication activity against a single account.
-
-### Step 2 — Quantify the Authentication Failures
-The next step was to quantify the events rather than relying on the number of results displayed in the Splunk interface. The following search can be used to explicitly count the matching authentication events:
-```splunk
-index=linux-alert user_name="john.smith" vendor_action=Failed
-| stats count as failed_attempts
-```
-
-#### Result
-* `failed_attempts = 500`
-
-This establishes that the account john.smith experienced 500 failed authentication attempts within the investigated activity window.
-
-### Step 3 — Identify the Source of the Authentication Attempts
-After establishing the volume of failed authentication activity, the next investigative question was: *Where were the authentication attempts originating from?* 
-
-The source IP was investigated to determine whether the failed attempts were associated with a consistent originating system.
-```splunk
-index=linux-alert src_ip="10.10.242.248"
-| stats count by user_name vendor_action
-| sort - count
-```
-
-#### Investigation Result
-* The source IP **10.10.242.248** was associated with the authentication activity against john.smith.
-* The activity showed repeated failed authentication attempts against the same account.
-
-This correlation is important because it connects the high-volume authentication failures to a specific source rather than treating the 500 failures as isolated events.
-
-### Step 4 — Establish the Attack Pattern
-The investigation then considered the relationship between the key components:
-```text
-Source IP (10.10.242.248) ➔ Target Account (john.smith) ➔ Authentication Result (Failed) ➔ Volume (500 attempts)
-```
-The repeated failures were not simply a single failed login followed by normal user behavior. Instead, the evidence showed:
-* A single account was repeatedly targeted.
-* The authentication attempts originated from the same identified source IP.
-* The authentication result was consistently recorded as Failed.
-* The total volume reached approximately 500 attempts.
-
-This pattern is consistent with automated or repeated password-guessing activity and warranted further investigation into whether the attacker eventually obtained valid credentials.
-
-### Step 5 — Investigate Whether the Attack Eventually Succeeded
-Because a high number of failed authentication attempts does not by itself prove that an account was compromised, the investigation continued by looking for successful authentication activity involving the same account and source IP.
-
-The investigation identified the following successful SSH authentication:
-```text
-2025-09-17 09:06:01.591
-tryhackme-2404 sshd[3007]: Accepted password for john.smith from 10.10.242.248 port 35932 ssh2
-```
-This event is significant because it connects the earlier failed authentication activity to a successful login. 
-
-#### Attack Chain Sequence
-```text
-Source IP: 10.10.242.248
-        ↓
-Repeated failed authentication (~500 failed attempts)
-        ↓
-Successful password authentication
-        ↓
-Target Account: john.smith
-        ↓
-SSH session established
-```
-The successful authentication occurred on the same host and involved the same source IP associated with the failed authentication activity.
-
----
-
-## Investigation Assessment
-The evidence establishes that 500 failed authentication attempts were made against the john.smith account. The activity originated from 10.10.242.248 and was followed by a successful SSH password authentication for the same account.
-
-This highlights an important distinction in the investigation:
-* **Failed-login count alone** establishes repeated authentication activity.
-* **Subsequent successful authentication** provides evidence that the activity progressed beyond unsuccessful access attempts.
-
-The investigation therefore did not stop after identifying the 500 failures. The failed attempts were correlated with the source IP and subsequent authentication activity to determine whether the attack resulted in successful access.
-
-## Finding
-* **500 failed login attempts** were made against john.smith.
-* The authentication activity originated from **10.10.242.248** and was subsequently followed by a **successful SSH password authentication** for john.smith, providing a basis for continuing the investigation into privilege escalation and persistence.
-
----
-<br><hr><br>
-
 ## Question 2 — Brute-Force Attack Duration
 
 ### Question
 What was the duration of the brute-force attack in minutes?
 
-### Investigation
-After identifying the failed authentication attempts, the next step was to determine how long the activity continued. Rather than manually reviewing hundreds of events, the investigation used Splunk's `_time` field to identify the earliest and latest failed authentication attempts. The difference between these timestamps provides the duration of the attack.
+---
 
-### Splunk Search
+### Investigation Objective
+Question 1 established that approximately 500 failed authentication attempts were recorded against the account `john.smith`.
+
+The next investigative objective was to determine the time span of the observed failed-authentication activity.
+
+Rather than manually reviewing hundreds of authentication events, the investigation used Splunk's event timestamp field, `_time`, to identify the chronologically earliest and latest failed authentication events.
+
+The resulting timestamps could then be used to calculate the elapsed time between the two events.
+
+#### Investigation Approach
+* Question 1 Finding: ~500 failed authentication attempts
+* Question 2: When did the activity begin?
+* When did the activity end?
+* Calculate elapsed time
+* Convert seconds to minutes
+* Validate and report the result
+
+---
+
+### Step 1 — Establish the Investigation Dataset
+The investigation continued from the authentication activity identified in Question 1.
+
+The initial search isolated failed authentication events involving `john.smith`:
+
+```splunk
+index=linux-alert user_name="john.smith" vendor_action=Failed
+```
+
+This search established the dataset being analyzed for the duration calculation.
+
+The investigation was intentionally kept scoped to:
+
+| Field | Value |
+| :--- | :--- |
+| **Index** | linux-alert |
+| **Target Account** | john.smith |
+| **Authentication Result** | Failed |
+
+This prevents unrelated authentication activity from being incorporated into the duration calculation.
+
+---
+
+### Step 2 — Identify the Event Timestamp
+Before calculating a duration, the investigation needed to determine which field represented the time associated with each authentication event.
+
+The `_time` and `_raw` fields were displayed for inspection:
+
+```splunk
+index=linux-alert user_name="john.smith" vendor_action=Failed
+| table _time _raw
+```
+
+#### Investigation Purpose
+The objective was to correlate the authentication events with their timestamps.
+
+The `_time` field provides the event timestamp used by Splunk. Splunk represents UNIX time values in seconds since the Unix epoch, which allows timestamp values to be used directly in arithmetic calculations.
+
+At this stage, no duration was calculated.
+
+The investigation first established which timestamps represented the beginning and end of the observed activity.
+
+---
+
+### Step 3 — Identify the Earliest Failed Authentication
+The next investigative question was:
+*What was the earliest recorded failed authentication event against john.smith?*
+
+The search was refined to return the chronologically earliest `_time` value:
+
+```splunk
+index=linux-alert user_name="john.smith" vendor_action=Failed
+| stats earliest(_time)
+```
+
+#### Result
+```text
+1758099710.282799
+```
+This value represents the earliest timestamp associated with the filtered failed-authentication events.
+
+#### Investigation Finding
+The beginning boundary of the observed failed-authentication activity was therefore established as:
+* First Failed Authentication → `1758099710.282799`
+
+---
+
+### Step 4 — Identify the Latest Failed Authentication
+Identifying the beginning of the activity was only half of the investigation.
+
+The next question was:
+*What was the latest recorded failed authentication event against john.smith?*
+
+The search was modified to retrieve the chronologically latest `_time` value:
+
+```splunk
+index=linux-alert user_name="john.smith" vendor_action=Failed
+| stats latest(_time)
+```
+
+#### Result
+```text
+1758099995.029531
+```
+The `latest()` function returns the chronologically latest occurrence, which is important for this investigation because Splunk also provides `first()` and `last()`, but those functions are based on event processing order rather than necessarily chronological order.
+
+#### Investigation Finding
+The end boundary of the observed failed-authentication activity was established as:
+* Last Failed Authentication → `1758099995.029531`
+
+The investigation now had both required endpoints:
+
+| Investigation Boundary | Timestamp |
+| :--- | :--- |
+| **First Failed Authentication** | 1758099710.282799 |
+| **Last Failed Authentication** | 1758099995.029531 |
+---
+
+### Step 5 — Combine the Investigation Boundaries
+The next step was to retrieve both timestamps within a single result.
+
+The `stats` command was used with `earliest()` and `latest()`, while the `as` clause assigned meaningful field names to the resulting values.
+
+```splunk
+index=linux-alert user_name="john.smith" vendor_action=Failed
+| stats earliest(_time) as first_attempt latest(_time) as last_attempt
+```
+
+#### Result
+
+| Field | Result |
+| :--- | :--- |
+| **first_attempt** | 1758099710.282799 |
+| **last_attempt** | 1758099995.029531 |
+
+The investigation now had two clearly defined variables:
+* `first_attempt` → `1758099710.282799`
+* `last_attempt` → `1758099995.029531`
+
+This provided the required inputs for calculating the elapsed time.
+
+---
+
+### Step 6 — Calculate the Elapsed Time
+The next investigative question was:
+*How much time elapsed between the first and last failed authentication events?*
+
+The timestamps were subtracted:
+\[\text{last\_attempt} - \text{first\_attempt}\]
+
+An `eval` statement was used to perform this calculation and create a new field called `duration_seconds`.
+
 ```splunk
 index=linux-alert user_name="john.smith" vendor_action=Failed
 | stats earliest(_time) as first_attempt latest(_time) as last_attempt
 | eval duration_seconds=last_attempt-first_attempt
-| eval duration_minutes=round(duration_seconds/60,2)
-| table first_attempt last_attempt duration_minutes
 ```
 
-### Investigation Breakdown
-```text
-earliest(_time) ➔ Find first failed authentication
-       ↓
-latest(_time) ➔ Find last failed authentication
-       ↓
-last_attempt - first_attempt ➔ Calculate duration in seconds
-       ↓
-duration_seconds / 60 ➔ Convert seconds to minutes
-       ↓
-round(...,2) ➔ Make the result easier to read
-```
-
-### Investigation Result
+#### Result
 
 | Field | Result |
 | :--- | :--- |
-| **First Attempt** | 09:01:50 |
-| **Last Attempt** | 09:06:35 |
-| **Duration** | 4.75 minutes |
+| **first_attempt** | 1758099710.282799 |
+| **last_attempt** | 1758099995.029531 |
+| **duration_seconds** | 284.746732 |
 
-The duration is approximately 5 minutes.
+#### Calculation
+```text
+  1758099995.029531
+- 1758099710.282799
+-------------------
+        284.746732 seconds
+```
 
-### Finding
-* The brute-force attack lasted approximately **5 minutes**.
+The observed span between the first and last matching failed-authentication events was therefore **284.746732 seconds**.
 
 ---
 
-## Question 3 — Privilege Escalation
+### Step 7 — Convert the Duration to Minutes
+The question requires the duration in minutes.
 
-### Question
-What username was the attacker able to privilege escalate to?
+Because 1 minute = 60 seconds, the calculated duration was divided by 60.
 
-### Investigation
-After establishing that the attacker successfully authenticated as john.smith, the investigation moved to activity occurring after the successful SSH login. The objective was to determine whether the compromised account was able to obtain elevated privileges. 
-
-The investigation identified a sudo event showing that john.smith executed `/usr/bin/su` with the target user set to `USER=root`.
-
-### Evidence
-```text
-2025-09-17 09:11:28.976
-tryhackme-2404 sudo: john.smith : TTY=pts/1 ; PWD=/home/john.smith ; USER=root ; COMMAND=/usr/bin/su
-```
-The following event confirmed that a root session was opened:
-```text
-2025-09-17 09:11:28.979
-sudo: pam_unix(sudo:session): session opened for user root(uid=0) by john.smith(uid=1001)
-```
-A subsequent su event also confirmed the transition:
-```text
-2025-09-17 09:11:28.984
-su[3399]: (to root) root on pts/2
-```
-
-### Investigation Breakdown
-```text
-john.smith ➔ sudo ➔ /usr/bin/su ➔ USER=root ➔ root UID 0
-```
-* **Original Account:** john.smith (UID 1001)
-* **Elevated Account:** root (UID 0)
-
-### Finding
-* The attacker successfully escalated privileges to the **root** account.
-
----
-
-## Question 4 — Persistence Account
-
-### Question
-What is the name of the user account created by the attacker for persistence?
-
-### Investigation
-After confirming root-level access, the investigation examined subsequent activity for commands that could establish persistence. A new Linux user account is a potential persistence mechanism because it can provide the attacker with another account for future access. Instead of searching directly for a known username, the investigation searched the logs for Linux account-creation commands.
-
-### Splunk Search
 ```splunk
-index=linux-alert
-| search "useradd" OR "adduser"
-| table _time _raw
-| sort _time
+index=linux-alert user_name="john.smith" vendor_action=Failed
+| stats earliest(_time) as first_attempt latest(_time) as last_attempt
+| eval duration_seconds=last_attempt-first_attempt
+| eval duration_minutes=duration_seconds/60
 ```
 
-### Investigation Result
-The search identified the following command:
-```text
-2025-09-17 09:12:10.762
-tryhackme-2404 sudo: root : TTY=pts/2 ; PWD=/home/john.smith ; USER=root ; COMMAND=/usr/sbin/adduser system-utm
-```
-Additional account-creation events confirmed the new account:
-```text
-adduser[3419]: Adding new user `system-utm'
-useradd[3430]: new user: name=system-utm, UID=1002, GID=1002, home=/home/system-utm, shell=/bin/bash
-```
-The account was also added to the users group:
-```text
-adduser[3419]: Adding user `system-utm' to group `users' ...
-```
+#### Result
 
-### Account Details
-
-| Field | Value |
+| Field | Result |
 | :--- | :--- |
-| **Username** | system-utm |
-| **UID** | 1002 |
-| **GID** | 1002 |
-| **Home Directory** | /home/system-utm |
-| **Shell** | /bin/bash |
-| **Group** | users |
-| **Creation Command** | /usr/sbin/adduser system-utm |
+| **first_attempt** | 1758099710.282799 |
+| **last_attempt** | 1758099995.029531 |
+| **duration_seconds** | 284.746732 |
+| **duration_minutes** | 4.74577887 |
 
-### Investigation Breakdown
-```text
-root access ➔ /usr/sbin/adduser system-utm ➔ New Linux account created ➔ UID 1002 assigned ➔ /home/system-utm created ➔ /bin/bash assigned ➔ Added to users group
+The exact calculated duration was **4.74577887 minutes**.
+
+---
+
+### Step 8 — Normalize the Result for Reporting
+The exact mathematical result contains more precision than is necessary for an analyst-facing finding.
+
+The final calculation therefore rounded the duration to two decimal places using Splunk's `round()` function. Splunk documents `round(<num>, <precision>)` for controlling the number of decimal places returned.
+
+#### Final Splunk Search
+```splunk
+index=linux-alert user_name="john.smith" vendor_action=Failed
+| stats earliest(_time) as first_attempt latest(_time) as last_attempt
+| eval duration_seconds=last_attempt-first_attempt
+| eval duration_minutes=duration_seconds/60
+| eval duration_minutes=round(duration_minutes,2)
 ```
 
-### Finding
-* The attacker created the **system-utm** account for persistence.
+#### Final Result
 
----
-
-## Investigation Timeline
-
-| Time | Activity | Finding |
-| :--- | :--- | :--- |
-| **09:01:50** | Failed authentication begins | john.smith targeted |
-| **09:01:50–09:06:35** | Repeated failed authentication | ~500 attempts |
-| **09:06:01** | Successful SSH authentication | john.smith authenticated from 10.10.242.248 |
-| **09:11:28** | sudo /usr/bin/su executed | Privilege escalation to root |
-| **09:11:28** | Root session opened | UID 0 confirmed |
-| **09:12:10** | /usr/sbin/adduser system-utm executed | Persistence account created |
-| **09:12:10** | system-utm created | UID 1002 |
-| **09:12:21** | Account added to users group | Persistence established |
-
----
-
-## Investigation Findings Summary
-
-| Question | Finding |
+| Field | Result |
 | :--- | :--- |
-| **Question 1** | Approximately 500 failed login attempts against john.smith |
-| **Question 2** | Brute-force activity lasted approximately 5 minutes |
-| **Question 3** | Attacker escalated privileges to root |
-| **Question 4** | Attacker created the system-utm account for persistence |
+| **First Attempt** | 1758099710.282799 |
+| **Last Attempt** | 1758099995.029531 |
+| **Duration — Seconds** | 284.746732 |
+| **Duration — Minutes** | 4.75 |
 
 ---
 
-## Attack Chain
-```text
-Source IP: 10.10.242.248
-        ↓
-Brute-Force Activity (~500 failed login attempts)
-        ↓
-Successful SSH Authentication: john.smith
-        ↓
-Privilege Escalation: sudo /usr/bin/su
-        ↓
-Root Access (UID 0)
-        ↓
-Persistence: adduser system-utm
-        ↓
-New Account: system-utm (UID 1002)
-        ↓
-Account Added to users Group
+### Investigation Development
+The final search was not created as a single query. It was developed progressively as the investigative questions were answered.
+
+1. **ISOLATE THE ACTIVITY**
+   ```splunk
+   index=linux-alert user_name="john.smith" vendor_action=Failed
+   ```
+2. **IDENTIFY THE TIMESTAMP**
+   ```splunk
+   _time
+   ```
+3. **FIND THE FIRST EVENT**
+   ```splunk
+   | stats earliest(_time)
+   ```
+4. **FIND THE LAST EVENT**
+   ```splunk
+   | stats latest(_time)
+   ```
+5. **NAME THE INVESTIGATION BOUNDARIES**
+   ```splunk
+   | stats earliest(_time) as first_attempt latest(_time) as last_attempt
+   ```
+6. **CALCULATE ELAPSED SECONDS**
+   ```splunk
+   | eval duration_seconds=last_attempt-first_attempt
+   ```
+7. **CONVERT TO MINUTES**
+   ```splunk
+   | eval duration_minutes=duration_seconds/60
+   ```
+8. **NORMALIZE FOR REPORTING**
+   ```splunk
+   | eval duration_minutes=round(duration_minutes,2)
+   ```
+
+#### FINAL RESULT
+**4.75 minutes**
+
+---
+
+### Final Investigation Search
+```splunk
+index=linux-alert user_name="john.smith" vendor_action=Failed
+| stats earliest(_time) as first_attempt latest(_time) as last_attempt
+| eval duration_seconds=last_attempt-first_attempt
+| eval duration_minutes=duration_seconds/60
+| eval duration_minutes=round(duration_minutes,2)
 ```
 
 ---
 
-## Final Assessment
-The Splunk investigation established a sequence of related authentication and post-authentication events.
+### Evidence Summary
 
-The activity began with approximately 500 failed authentication attempts against john.smith over approximately 5 minutes. The attacker then successfully authenticated to the Linux host using SSH from 10.10.242.248. Following successful authentication, john.smith used `sudo /usr/bin/su` to obtain root-level privileges. Shortly afterward, the attacker executed `/usr/sbin/adduser system-utm`, creating a new Linux account with UID 1002, a home directory, a Bash shell, and membership in the users group.
+| Investigation Element | Evidence |
+| :--- | :--- |
+| **Target Account** | john.smith |
+| **Authentication Result** | Failed |
+| **First Recorded Failed Attempt** | 1758099710.282799 |
+| **Last Recorded Failed Attempt** | 1758099995.029531 |
+| **Observed Activity Window** | 284.746732 seconds |
+| **Calculated Duration** | 4.74577887 minutes |
+| **Reported Duration** | 4.75 minutes |
+| **Operational Approximation** | Approximately 5 minutes |
 
-The evidence establishes the following attack sequence:
-```text
-Brute Force ➔ Successful Authentication ➔ Privilege Escalation ➔ Root Access ➔ Account Creation ➔ Persistence
-```
-The investigation demonstrates the use of Splunk to correlate authentication failures, successful SSH authentication, privilege escalation, and account-creation activity into a single attack timeline.
 ---
+
+### SOC Assessment
+The investigation established that the filtered failed-authentication activity against `john.smith` spanned **4.75 minutes**, based on the difference between the chronologically earliest and latest matching authentication events.
+
+Combined with Question 1, the investigation established:
+* ~500 Failed Authentication Attempts
+* Observed Across a 4.75-Minute Window
+* Source IP Identified: `10.10.242.248`
+* Successful SSH Authentication
+* `john.smith` Session Established
+
+The duration calculation establishes the observed time window of the failed-authentication activity. It should not be interpreted as proof that an authentication attempt occurred continuously throughout every second of the 4.75-minute interval; it represents the span between the first and last matching events identified by the search.
+
+The presence of a subsequent successful SSH authentication from the same source provides the next investigative pivot.
+
+The investigation should therefore proceed to determine:
+*Did the successful authentication result in privilege escalation or other post-compromise activity?*
+
+This leads directly into the next stage of the investigation.
