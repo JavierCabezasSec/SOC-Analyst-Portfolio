@@ -476,3 +476,4 @@ The investigation should therefore proceed to determine:
 *Did the successful authentication result in privilege escalation or other post-compromise activity?*
 
 This leads directly into the next stage of the investigation.
+---
